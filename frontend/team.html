@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Team Workspace — Devine Thesis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="data.js" defer></script>
+  <script src="team.js" defer></script>
+</head>
+<body class="team-page">
+  <nav class="navbar">
+    <a class="logo" href="index.html">PKL<span>®</span></a>
+    <a class="nav-link" href="index.html">← PUBLIC THESIS ARCHIVE</a>
+  </nav>
+
+  <main class="team-main">
+    <section id="login-panel" class="team-panel">
+      <p class="eyebrow">PRIVATE / DEVINE TEAM</p>
+      <h1>Document the<br><span>thesis.</span></h1>
+      <p class="team-intro">Log in with your Howest team account to share research, design decisions and development updates.</p>
+      <form id="login-form" class="team-form">
+        <label for="email">EMAIL</label>
+        <input id="email" type="email" required autocomplete="email">
+        <label for="password">PASSWORD</label>
+        <input id="password" type="password" required autocomplete="current-password">
+        <button type="submit" class="submit-button">LOG IN <span>↗</span></button>
+        <p id="login-message" class="form-message" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section id="editor-panel" class="team-panel" hidden>
+      <div class="team-heading">
+        <div>
+          <p class="eyebrow">PRIVATE / DEVINE TEAM</p>
+          <h1>Add a thesis<br><span>update.</span></h1>
+        </div>
+        <button id="logout-button" class="text-button" type="button">LOG OUT</button>
+      </div>
+      <form id="profile-form" class="profile-form">
+        <div>
+          <p class="eyebrow">YOUR TEAM PROFILE</p>
+          <p class="muted">Save your name and photo once. They will be used automatically on every thesis update you publish.</p>
+        </div>
+        <label for="profile-name">DISPLAY NAME</label>
+        <input id="profile-name" type="text" maxlength="60" required placeholder="Your name">
+        <label for="profile-avatar">PROFILE PHOTO <span class="optional">(optional, max 5 MB)</span></label>
+        <input id="profile-avatar" type="file" accept="image/*">
+        <div id="avatar-preview" class="avatar-preview" aria-live="polite"></div>
+        <button type="submit" class="text-button">SAVE PROFILE</button>
+        <p id="profile-message" class="form-message" aria-live="polite"></p>
+      </form>
+      <section id="profile-card" class="profile-card" hidden aria-label="Your team profile">
+        <div class="profile-card-info">
+          <div id="profile-card-avatar" class="profile-card-avatar"></div>
+          <div>
+            <p class="eyebrow">YOUR TEAM PROFILE</p>
+            <h2 id="profile-card-name"></h2>
+            <p class="muted">Author details are added automatically to your updates.</p>
+          </div>
+        </div>
+        <button id="edit-profile-button" class="edit-profile-button" type="button" aria-label="Edit profile">✎</button>
+      </section>
+      <form id="team-form" class="team-form">
+        <label for="category">CATEGORY</label>
+        <select id="category" required>
+          <option value="ux">UX</option>
+          <option value="design">DESIGN</option>
+          <option value="code">CODE</option>
+        </select>
+        <div class="form-section-label">01 / WRITE THE NOTE</div>
+        <label for="title">TITLE</label>
+        <input id="title" type="text" maxlength="80" required>
+        <label for="body">YOUR NOTE</label>
+        <textarea id="body" rows="7" required></textarea>
+        <label for="conclusion">KEY TAKEAWAY <span class="optional">(optional)</span></label>
+        <textarea id="conclusion" rows="3" maxlength="240" placeholder="What should the reader remember?"></textarea>
+        <button type="submit" class="submit-button">PUBLISH NOTE <span>↗</span></button>
+        <p id="team-message" class="form-message" aria-live="polite"></p>
+      </form>
+      <div>
+        <p class="eyebrow">PUBLISHED THESIS UPDATES</p>
+        <div id="team-posts" class="team-posts"></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

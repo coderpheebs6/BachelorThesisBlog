@@ -1,56 +1,105 @@
+
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Mijn Blog</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Source+Serif+4:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" crossorigin href="/assets/index-SPA0Gcbe.css">
-</head>
-<body>
-  <header class="top">
-    <h1>Mijn blog</h1>
-    <p>Alles wat ik leer over UX, design en code.</p>
-  </header>
+  <title>Devine Thesis Archive — Howest Kortrijk</title>
 
-  <main>
-    <section class="composer" aria-labelledby="composer-title">
-      <h2 id="composer-title">Nieuw blogonderdeel</h2>
-      <form id="post-form">
-        <label>Titel
-          <input id="title" type="text" required maxlength="80" placeholder="Bijv. Waarom knoppen groot moeten zijn">
-        </label>
-        <label>Tekst
-          <textarea id="body" required rows="5" placeholder="Schrijf hier je stukje…"></textarea>
-        </label>
-        <fieldset>
-          <legend>Voeg toe aan</legend>
-          <label class="choice"><input type="radio" name="category" value="ux" checked> UX</label>
-          <label class="choice"><input type="radio" name="category" value="design"> Design</label>
-          <label class="choice"><input type="radio" name="category" value="code"> Code</label>
-        </fieldset>
-        <button type="submit">Toevoegen</button>
-      </form>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="data.js" defer></script>
+  <script src="script.js" defer></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-zJ-brgEL.css">
+</head>
+<body class="home-page">
+
+  <nav class="navbar">
+    <a class="logo" href="index.html">PKL<span>®</span></a>
+    <span class="nav-label">DEVINE BACHELOR THESIS · HOWEST KORTRIJK</span>
+    <a class="nav-link" href="#disciplines">EXPLORE OUR WORK ↘</a>
+  </nav>
+
+  <main class="home-main">
+    <header class="hero">
+      <p class="eyebrow hero-eyebrow">DEVINE BACHELOR THESIS · 2026</p>
+      <h1 class="hero-title">Learning by<br><span>making.</span></h1>
+      <div class="hero-bottom">
+        <p>Our digital archive of research,<br>experiments and design decisions.</p>
+        <span class="hero-index">HOWEST KORTRIJK<br>DEVINE / BACHELOR PROJECT</span>
+      </div>
+    </header>
+
+    <section class="disciplines" id="disciplines">
+      <div class="section-heading">
+        <span>01 — OUR PROCESS</span>
+        <span>EXPLORE THE RESEARCH ↘</span>
+      </div>
+
+      <div class="category-grid">
+        <a href="ux.html" class="category-card card-ux">
+          <div class="card-top"><span>01 / RESEARCH</span><span>↗</span></div>
+          <div class="card-art art-ux" aria-hidden="true">
+            <span class="aspire-ring aspire-ring-one"></span>
+            <span class="aspire-ring aspire-ring-two"></span>
+            <span class="aspire-ring aspire-ring-three"></span>
+            <span class="art-word">WE ASPIRE.</span>
+          </div>
+          <div class="card-bottom">
+            <div><h2>UX</h2><p>Research, users & experiences.</p></div>
+            <span class="card-arrow">↗</span>
+          </div>
+        </a>
+
+        <a href="design.html" class="category-card card-design">
+          <div class="card-top"><span>02 / DESIGN</span><span>↗</span></div>
+          <div class="card-art art-design" aria-hidden="true">
+            <span class="serve-circle serve-circle-one"></span>
+            <span class="serve-circle serve-circle-two"></span>
+            <span class="serve-circle serve-circle-three"></span>
+            <span class="art-word">WE SERVE.</span>
+          </div>
+          <div class="card-bottom">
+            <div><h2>Design</h2><p>Concepts, visuals & iterations.</p></div>
+            <span class="card-arrow">↗</span>
+          </div>
+        </a>
+
+        <a href="code.html" class="category-card card-code">
+          <div class="card-top"><span>03 / DEVELOP</span><span>↗</span></div>
+          <div class="card-art art-code" aria-hidden="true">
+            <span class="work-diamonds">
+              <i></i><i></i><i></i>
+            </span>
+            <span class="art-word">WE WORK.</span>
+          </div>
+          <div class="card-bottom">
+            <div><h2>Code</h2><p>Prototypes, systems & production.</p></div>
+            <span class="card-arrow">↗</span>
+          </div>
+        </a>
+      </div>
     </section>
 
-    <section class="board" aria-label="Blogonderdelen">
-      <article class="column" data-cat="ux">
-        <h2>UX <span class="count" id="count-ux">0</span></h2>
-        <div class="list" id="list-ux"></div>
-      </article>
-      <article class="column" data-cat="design">
-        <h2>Design <span class="count" id="count-design">0</span></h2>
-        <div class="list" id="list-design"></div>
-      </article>
-      <article class="column" data-cat="code">
-        <h2>Code <span class="count" id="count-code">0</span></h2>
-        <div class="list" id="list-code"></div>
-      </article>
+    <section class="latest-section">
+      <div class="section-heading">
+        <span>02 — RECENT UPDATES</span>
+        <span>FROM OUR THESIS PROCESS</span>
+      </div>
+      <div id="latest-posts" class="latest-posts">
+        <p class="muted">Our latest research and project updates will appear here.</p>
+      </div>
     </section>
   </main>
 
-  <script src="/script.js"></script>
+  <footer class="footer">
+    <a class="logo" href="index.html">PKL<span>®</span></a>
+    <span>PKL STUDIO · PHOEBE · KIARA · LENIE.</span>
+    <a href="#disciplines">BACK TO TOP ↑</a>
+  </footer>
+
 </body>
 </html>
