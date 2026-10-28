@@ -18,6 +18,20 @@ const cancelDeleteButton = document.getElementById("cancel-delete-button");
 const confirmDeleteButton = document.getElementById("confirm-delete-button");
 let pendingDeleteId = null;
 
+function closeDeleteModal() {
+  pendingDeleteId = null;
+  deleteModal.classList.remove("is-open");
+  deleteModal.setAttribute("aria-hidden", "true");
+}
+
+function openDeleteModal(post) {
+  pendingDeleteId = post.id;
+  deleteModalMessage.textContent = `"${post.title}" will be permanently removed from your published notes.`;
+  deleteModal.classList.add("is-open");
+  deleteModal.setAttribute("aria-hidden", "false");
+  cancelDeleteButton.focus();
+}
+
 function showMessage(element, message) {
   element.textContent = message;
 }
@@ -190,10 +204,7 @@ teamPosts.addEventListener("click", async event => {
       return;
     }
 
-    pendingDeleteId = post.id;
-    deleteModalMessage.textContent = `"${post.title}" will be permanently removed from your published notes.`;
-    deleteModal.hidden = false;
-    cancelDeleteButton.focus();
+    openDeleteModal(post);
   } catch (error) {
     showMessage(teamMessage, `Could not prepare the note for deletion: ${error.message}`);
     console.error("Preparing note deletion failed", error);
@@ -201,15 +212,13 @@ teamPosts.addEventListener("click", async event => {
 });
 
 cancelDeleteButton.addEventListener("click", () => {
-  pendingDeleteId = null;
-  deleteModal.hidden = true;
+  closeDeleteModal();
 });
 
 confirmDeleteButton.addEventListener("click", async () => {
   if (!pendingDeleteId) return;
   const postId = pendingDeleteId;
-  pendingDeleteId = null;
-  deleteModal.hidden = true;
+  closeDeleteModal();
   try {
     await window.fieldnotesData.deletePost(postId);
     await renderTeamPosts();
@@ -220,11 +229,11 @@ confirmDeleteButton.addEventListener("click", async () => {
 });
 
 deleteModal.addEventListener("click", event => {
-  if (event.target === deleteModal) cancelDeleteButton.click();
+  if (event.target === deleteModal) closeDeleteModal();
 });
 
 document.addEventListener("keydown", event => {
-  if (event.key === "Escape" && !deleteModal.hidden) cancelDeleteButton.click();
+  if (event.key === "Escape" && deleteModal.classList.contains("is-open")) closeDeleteModal();
 });
 
 document.getElementById("logout-button").addEventListener("click", async () => {
