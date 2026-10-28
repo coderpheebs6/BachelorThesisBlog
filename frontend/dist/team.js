@@ -16,7 +16,11 @@ const deleteModal = document.getElementById("delete-modal");
 const deleteModalMessage = document.getElementById("delete-modal-message");
 const cancelDeleteButton = document.getElementById("cancel-delete-button");
 const confirmDeleteButton = document.getElementById("confirm-delete-button");
+const noteFormLabel = document.getElementById("note-form-label");
+const noteSubmitButton = document.getElementById("note-submit-button");
+const cancelEditButton = document.getElementById("cancel-edit-button");
 let pendingDeleteId = null;
+let editingPostId = null;
 
 function closeDeleteModal() {
   pendingDeleteId = null;
@@ -85,7 +89,10 @@ async function renderTeamPosts() {
             <h2>${escapeHTML(post.title)}</h2>
             <span class="muted">${escapeHTML(post.author_name || "PKL Studio team")}</span>
           </div>
-          <button class="text-button delete-team-post" data-id="${escapeHTML(post.id)}" type="button">DELETE</button>
+          <div class="team-post-actions">
+            <button class="text-button edit-team-post" data-id="${escapeHTML(post.id)}" type="button">EDIT</button>
+            <button class="text-button delete-team-post" data-id="${escapeHTML(post.id)}" type="button">DELETE</button>
+          </div>
         </article>
       `).join("")
       : `<p class="muted">You have not published any notes yet.</p>`;
@@ -173,25 +180,63 @@ editProfileButton.addEventListener("click", () => {
 
 teamForm.addEventListener("submit", async event => {
   event.preventDefault();
-  showMessage(teamMessage, "Publishing...");
+  showMessage(teamMessage, editingPostId ? "Saving changes..." : "Publishing...");
 
   try {
-    await window.fieldnotesData.addPost({
+    const note = {
       category: document.getElementById("category").value,
       title: document.getElementById("title").value.trim(),
       body: document.getElementById("body").value.trim(),
-      conclusion: document.getElementById("conclusion").value.trim() || null,
-      date: new Date().toISOString()
-    });
+      conclusion: document.getElementById("conclusion").value.trim() || null
+    };
+    if (editingPostId) {
+      await window.fieldnotesData.updatePost(editingPostId, note);
+      editingPostId = null;
+      noteFormLabel.textContent = "01 / WRITE THE NOTE";
+      noteSubmitButton.innerHTML = "PUBLISH NOTE <span>↗</span>";
+      cancelEditButton.hidden = true;
+      showMessage(teamMessage, "Note updated.");
+    } else {
+      await window.fieldnotesData.addPost({ ...note, date: new Date().toISOString() });
+      showMessage(teamMessage, "Note published.");
+    }
     teamForm.reset();
-    showMessage(teamMessage, "Note published.");
-    renderTeamPosts();
-  } catch {
-    showMessage(teamMessage, "Could not publish the note.");
+    await renderTeamPosts();
+  } catch (error) {
+    showMessage(teamMessage, `Could not save the note: ${error.message}`);
+    console.error("Saving note failed", error);
   }
 });
 
 teamPosts.addEventListener("click", async event => {
+  const editButton = event.target.closest(".edit-team-post");
+  if (editButton) {
+    try {
+      const session = await window.fieldnotesData.getSession();
+      const post = (await window.fieldnotesData.getPosts())
+        .find(item => item.id === editButton.dataset.id && item.author_id === session?.user.id);
+      if (!post) {
+        showMessage(teamMessage, "Could not find your note.");
+        return;
+      }
+
+      editingPostId = post.id;
+      document.getElementById("category").value = post.category;
+      document.getElementById("title").value = post.title;
+      document.getElementById("body").value = post.body;
+      document.getElementById("conclusion").value = post.conclusion || "";
+      noteFormLabel.textContent = "01 / EDIT THE NOTE";
+      noteSubmitButton.innerHTML = "SAVE CHANGES <span>↗</span>";
+      cancelEditButton.hidden = false;
+      teamForm.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("title").focus();
+    } catch (error) {
+      showMessage(teamMessage, `Could not open the note for editing: ${error.message}`);
+      console.error("Opening note edit failed", error);
+    }
+    return;
+  }
+
   const button = event.target.closest(".delete-team-post");
   if (!button) return;
 
@@ -209,6 +254,15 @@ teamPosts.addEventListener("click", async event => {
     showMessage(teamMessage, `Could not prepare the note for deletion: ${error.message}`);
     console.error("Preparing note deletion failed", error);
   }
+});
+
+cancelEditButton.addEventListener("click", () => {
+  editingPostId = null;
+  teamForm.reset();
+  noteFormLabel.textContent = "01 / WRITE THE NOTE";
+  noteSubmitButton.innerHTML = "PUBLISH NOTE <span>↗</span>";
+  cancelEditButton.hidden = true;
+  showMessage(teamMessage, "");
 });
 
 cancelDeleteButton.addEventListener("click", () => {

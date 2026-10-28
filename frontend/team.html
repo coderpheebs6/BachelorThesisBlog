@@ -72,14 +72,15 @@
           <option value="design">DESIGN</option>
           <option value="code">CODE</option>
         </select>
-        <div class="form-section-label">01 / WRITE THE NOTE</div>
+        <div id="note-form-label" class="form-section-label">01 / WRITE THE NOTE</div>
         <label for="title">TITLE</label>
         <input id="title" type="text" maxlength="80" required>
         <label for="body">YOUR NOTE</label>
         <textarea id="body" rows="7" required></textarea>
         <label for="conclusion">KEY TAKEAWAY <span class="optional">(optional)</span></label>
         <textarea id="conclusion" rows="3" maxlength="240" placeholder="What should the reader remember?"></textarea>
-        <button type="submit" class="submit-button">PUBLISH NOTE <span>↗</span></button>
+        <button id="note-submit-button" type="submit" class="submit-button">PUBLISH NOTE <span>↗</span></button>
+        <button id="cancel-edit-button" type="button" class="text-button cancel-edit-button" hidden>CANCEL EDIT</button>
         <p id="team-message" class="form-message" aria-live="polite"></p>
       </form>
       <div>

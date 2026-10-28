@@ -56,6 +56,23 @@ window.fieldnotesData = {
     if (error) throw error;
     return data;
   },
+  async updatePost(id, post) {
+    if (!supabaseClient) throw new Error("Supabase is not configured.");
+
+    const session = await this.getSession();
+    if (!session?.user?.id) throw new Error("You must be logged in.");
+
+    const { data, error } = await supabaseClient
+      .from("posts")
+      .update(post)
+      .eq("id", id)
+      .eq("author_id", session.user.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
   async getProfile() {
     if (!supabaseClient) return null;
     const session = await this.getSession();

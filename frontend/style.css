@@ -486,6 +486,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .team-posts { display: grid; gap: 10px; margin-top: 18px; }
 .team-post { display: flex; justify-content: space-between; gap: 20px; align-items: center; border-top: 1px solid var(--line); padding: 16px 0; }
 .team-post h2 { font-size: 1.1rem; margin: 5px 0 0; }
+.team-post-actions { display: flex; gap: 16px; align-items: center; flex-shrink: 0; }
+.cancel-edit-button { justify-self: start; }
 .profile-form { border: 1px solid var(--line); padding: 20px; margin: 30px 0 42px; display: grid; gap: 10px; }
 .profile-form[hidden], .profile-card[hidden] { display: none; }
 .profile-form > div:first-child { margin-bottom: 4px; }
