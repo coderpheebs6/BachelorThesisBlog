@@ -65,6 +65,7 @@ async function renderCategory() {
       <h2>${escapeHTML(post.title)}</h2>
       <p>${escapeHTML(post.body.slice(0, 180))}${post.body.length > 180 ? "…" : ""}</p>
       ${post.conclusion ? `<p class="takeaway"><strong>KEY TAKEAWAY</strong> ${escapeHTML(post.conclusion)}</p>` : ""}
+      ${post.ai_usage ? `<p class="ai-summary"><span class="ai-icon" aria-hidden="true">✦</span><span><strong>AI USE</strong> ${escapeHTML(post.ai_usage)}</span></p>` : ""}
       <span class="note-footer">${authorMarkup(post)}<span class="read-more">OPEN NOTE ↗</span></span>
     </a>
   `).join("");
@@ -114,6 +115,7 @@ async function renderArticle() {
     <h1>${escapeHTML(post.title)}</h1>
     <div class="article-body">${escapeHTML(post.body)}</div>
     ${post.conclusion ? `<aside class="article-takeaway"><span class="eyebrow">KEY TAKEAWAY</span><p>${escapeHTML(post.conclusion)}</p></aside>` : ""}
+    ${post.ai_usage ? `<aside class="article-ai"><span class="ai-icon" aria-hidden="true">✦</span><div><span class="eyebrow">AI USE</span><p>${escapeHTML(post.ai_usage)}</p></div></aside>` : ""}
   `;
 
   if (window.gsap && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {

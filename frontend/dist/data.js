@@ -16,7 +16,7 @@ window.fieldnotesData = {
 
     const { data, error } = await supabaseClient
       .from("posts")
-      .select("id, category, title, body, conclusion, author_id, date")
+      .select("id, category, title, body, conclusion, ai_usage, author_id, date")
       .order("date", { ascending: false });
 
     if (error) throw error;

@@ -190,7 +190,8 @@ teamForm.addEventListener("submit", async event => {
       category: document.getElementById("category").value,
       title: document.getElementById("title").value.trim(),
       body: document.getElementById("body").value.trim(),
-      conclusion: document.getElementById("conclusion").value.trim() || null
+      conclusion: document.getElementById("conclusion").value.trim() || null,
+      ai_usage: document.getElementById("ai-usage").value.trim() || null
     };
     if (editingPostId) {
       await window.fieldnotesData.updatePost(editingPostId, note);
@@ -225,6 +226,7 @@ teamPosts.addEventListener("click", async event => {
       document.getElementById("title").value = post.title;
       document.getElementById("body").value = post.body;
       document.getElementById("conclusion").value = post.conclusion || "";
+      document.getElementById("ai-usage").value = post.ai_usage || "";
       noteFormLabel.textContent = "01 / EDIT THE NOTE";
       noteSubmitButton.innerHTML = "SAVE CHANGES <span>↗</span>";
       cancelEditButton.hidden = false;

@@ -72,7 +72,8 @@ een post geen naam of foto meer te kiezen:
 ```sql
 alter table public.posts
   add column if not exists author_id uuid references auth.users(id),
-  add column if not exists conclusion text;
+  add column if not exists conclusion text,
+  add column if not exists ai_usage text;
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
