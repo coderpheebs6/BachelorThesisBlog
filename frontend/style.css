@@ -77,6 +77,27 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 .nav-link:hover, .footer a:hover { color: var(--lime); }
 
+.nav-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+}
+
+.team-link {
+  padding: 8px 11px;
+  border: 1px solid var(--lime);
+  color: var(--lime);
+  font: .64rem var(--mono);
+  letter-spacing: .06em;
+  transition: background .2s ease, color .2s ease;
+}
+
+.team-link:hover {
+  background: var(--lime);
+  color: var(--bg);
+}
+
 .home-main, .category-main, .article-main {
   width: min(1120px, 88%);
   margin: 0 auto;
@@ -449,6 +470,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 @media (max-width: 760px) {
   .nav-label { display: none; }
   .navbar { padding: 18px 6%; }
+  .nav-actions { gap: 10px; }
+  .nav-actions .nav-link { display: none; }
+  .team-link { padding: 7px 8px; font-size: .58rem; }
   .hero { padding: 75px 0 80px; }
   .hero-bottom { align-items: start; }
   .hero-index { font-size: .58rem; }
