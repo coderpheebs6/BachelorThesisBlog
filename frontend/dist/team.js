@@ -21,6 +21,7 @@ const noteSubmitButton = document.getElementById("note-submit-button");
 const cancelEditButton = document.getElementById("cancel-edit-button");
 let pendingDeleteId = null;
 let editingPostId = null;
+const ownPostsById = new Map();
 
 function closeDeleteModal() {
   pendingDeleteId = null;
@@ -81,6 +82,8 @@ async function renderTeamPosts() {
     if (!session) return;
     const posts = await window.fieldnotesData.getPosts();
     const ownPosts = posts.filter(post => post.author_id === session.user.id);
+    ownPostsById.clear();
+    ownPosts.forEach(post => ownPostsById.set(String(post.id), post));
     teamPosts.innerHTML = ownPosts.length
       ? ownPosts.map(post => `
         <article class="team-post">
@@ -211,15 +214,12 @@ teamForm.addEventListener("submit", async event => {
 teamPosts.addEventListener("click", async event => {
   const editButton = event.target.closest(".edit-team-post");
   if (editButton) {
+    const post = ownPostsById.get(String(editButton.dataset.id));
+    if (!post) {
+      showMessage(teamMessage, "Could not find your note. Please refresh the page.");
+      return;
+    }
     try {
-      const session = await window.fieldnotesData.getSession();
-      const post = (await window.fieldnotesData.getPosts())
-        .find(item => item.id === editButton.dataset.id && item.author_id === session?.user.id);
-      if (!post) {
-        showMessage(teamMessage, "Could not find your note.");
-        return;
-      }
-
       editingPostId = post.id;
       document.getElementById("category").value = post.category;
       document.getElementById("title").value = post.title;
@@ -241,11 +241,9 @@ teamPosts.addEventListener("click", async event => {
   if (!button) return;
 
   try {
-    const session = await window.fieldnotesData.getSession();
-    const post = (await window.fieldnotesData.getPosts())
-      .find(item => item.id === button.dataset.id && item.author_id === session?.user.id);
+    const post = ownPostsById.get(String(button.dataset.id));
     if (!post) {
-      showMessage(teamMessage, "Could not find your note.");
+      showMessage(teamMessage, "Could not find your note. Please refresh the page.");
       return;
     }
 
