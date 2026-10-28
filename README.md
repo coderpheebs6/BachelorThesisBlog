@@ -153,5 +153,11 @@ on public.posts for insert
 to authenticated
 with check (auth.uid() = author_id);
 
+create policy "Team can update own posts"
+on public.posts for update
+to authenticated
+using (auth.uid() = author_id)
+with check (auth.uid() = author_id);
+
 drop policy if exists "Team can add posts" on public.posts;
 ```

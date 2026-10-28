@@ -68,9 +68,12 @@ window.fieldnotesData = {
       .eq("id", id)
       .eq("author_id", session.user.id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
+    if (!data) {
+      throw new Error("The note could not be updated. Check that the posts update policy allows your account to edit its own notes.");
+    }
     return data;
   },
   async getProfile() {
