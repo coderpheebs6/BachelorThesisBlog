@@ -483,6 +483,11 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .composer { padding: 24px; }
   .section-heading { font-size: .59rem; }
   .footer { align-items: start; }
+  .team-main { width: 88%; padding: 64px 0 80px; }
+  .team-heading { gap: 12px; }
+  .team-heading .text-button { padding-top: 8px; }
+  .team-post { align-items: flex-start; }
+  .team-post-actions { flex-direction: column; align-items: flex-end; gap: 8px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -493,32 +498,43 @@ button, a { -webkit-tap-highlight-color: transparent; }
   }
 }
 
-.team-main { max-width: 900px; margin: 0 auto; padding: 80px 24px; }
-.team-panel { max-width: 620px; margin: 0 auto; }
+.team-main { width: min(1120px, 88%); margin: 0 auto; padding: 92px 0 110px; }
+.team-panel { max-width: 760px; margin: 0 auto; }
+.team-panel[hidden] { display: none; }
 .team-panel h1 { font-size: clamp(3rem, 8vw, 6rem); line-height: .95; margin: 12px 0 24px; }
 .team-panel h1 span { color: var(--lime); }
-.team-intro { color: var(--muted); max-width: 34rem; margin-bottom: 36px; }
-.team-form { display: grid; gap: 12px; max-width: 560px; }
-.team-form label { margin-top: 12px; }
+.team-intro { color: var(--muted); max-width: 34rem; margin-bottom: 44px; }
+.team-form { display: grid; gap: 12px; max-width: 680px; }
+.team-form label { margin-top: 18px; color: var(--muted); font: .67rem var(--mono); letter-spacing: .07em; }
 .team-form input, .team-form textarea, .team-form select {
-  width: 100%; padding: 14px; border: 1px solid var(--line); background: var(--surface);
-  color: var(--ink); font: inherit; border-radius: 0;
+  width: 100%; padding: 12px 0; border: 0; border-bottom: 1px solid var(--line); background: transparent;
+  color: var(--ink); font: inherit; border-radius: 0; outline: 0; transition: border-color .2s ease;
+}
+.team-form textarea {
+  min-height: 120px;
+  resize: vertical;
+  line-height: 1.55;
+}
+.team-form input:focus, .team-form textarea:focus, .team-form select:focus {
+  border-bottom-color: var(--lime);
 }
 .team-heading { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; }
 .text-button { border: 0; background: none; color: var(--muted); cursor: pointer; font: inherit; text-decoration: underline; }
 .text-button:hover { color: var(--lime); }
 .team-posts { display: grid; gap: 10px; margin-top: 18px; }
-.team-post { display: flex; justify-content: space-between; gap: 20px; align-items: center; border-top: 1px solid var(--line); padding: 16px 0; }
+.team-post { display: flex; justify-content: space-between; gap: 20px; align-items: center; border-top: 1px solid var(--line); padding: 20px 0; }
 .team-post h2 { font-size: 1.1rem; margin: 5px 0 0; }
 .team-post-actions { display: flex; gap: 16px; align-items: center; flex-shrink: 0; }
 .cancel-edit-button { justify-self: start; }
-.profile-form { border: 1px solid var(--line); padding: 20px; margin: 30px 0 42px; display: grid; gap: 10px; }
+.profile-form { border-top: 1px solid var(--line); padding: 28px 0 0; margin: 42px 0 58px; display: grid; gap: 10px; }
 .profile-form[hidden], .profile-card[hidden] { display: none; }
 .profile-form > div:first-child { margin-bottom: 4px; }
-.profile-form input { width: 100%; padding: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; }
+.profile-form input { width: 100%; padding: 12px 0; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); font: inherit; outline: 0; }
+.profile-form input:focus { border-bottom-color: var(--lime); }
+.profile-form input[type="file"] { padding: 10px 0; border-bottom: 1px dashed var(--line); }
 .avatar-preview { min-height: 0; }
 .avatar-preview img { width: 72px; height: 72px; object-fit: cover; border-radius: 50%; border: 2px solid var(--lime); }
-.profile-card { display: flex; justify-content: space-between; align-items: center; gap: 24px; border: 1px solid var(--line); padding: 20px; margin: 30px 0 42px; }
+.profile-card { display: flex; justify-content: space-between; align-items: center; gap: 24px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 22px 0; margin: 42px 0 58px; }
 .profile-card-info { display: flex; align-items: center; gap: 16px; }
 .profile-card h2 { margin: 4px 0; font-size: 1.35rem; }
 .profile-card-avatar { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; background: var(--lime); color: var(--ink); font: 1rem var(--mono); flex: 0 0 72px; }
