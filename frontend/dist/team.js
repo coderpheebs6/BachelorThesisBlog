@@ -12,6 +12,11 @@ const profileCard = document.getElementById("profile-card");
 const profileCardAvatar = document.getElementById("profile-card-avatar");
 const profileCardName = document.getElementById("profile-card-name");
 const editProfileButton = document.getElementById("edit-profile-button");
+const deleteModal = document.getElementById("delete-modal");
+const deleteModalMessage = document.getElementById("delete-modal-message");
+const cancelDeleteButton = document.getElementById("cancel-delete-button");
+const confirmDeleteButton = document.getElementById("confirm-delete-button");
+let pendingDeleteId = null;
 
 function showMessage(element, message) {
   element.textContent = message;
@@ -54,9 +59,12 @@ function renderProfile(profile) {
 
 async function renderTeamPosts() {
   try {
+    const session = await window.fieldnotesData.getSession();
+    if (!session) return;
     const posts = await window.fieldnotesData.getPosts();
-    teamPosts.innerHTML = posts.length
-      ? posts.map(post => `
+    const ownPosts = posts.filter(post => post.author_id === session.user.id);
+    teamPosts.innerHTML = ownPosts.length
+      ? ownPosts.map(post => `
         <article class="team-post">
           <div>
             <span class="note-tag">${escapeHTML(post.category)} / ${formatDate(post.date)}</span>
@@ -66,7 +74,7 @@ async function renderTeamPosts() {
           <button class="text-button delete-team-post" data-id="${escapeHTML(post.id)}" type="button">DELETE</button>
         </article>
       `).join("")
-      : `<p class="muted">No notes yet.</p>`;
+      : `<p class="muted">You have not published any notes yet.</p>`;
   } catch (error) {
     showMessage(teamMessage, `Could not load notes: ${error.message}`);
     console.error("Loading notes failed", error);
@@ -171,14 +179,52 @@ teamForm.addEventListener("submit", async event => {
 
 teamPosts.addEventListener("click", async event => {
   const button = event.target.closest(".delete-team-post");
-  if (!button || !window.confirm("Delete this note?")) return;
+  if (!button) return;
 
   try {
-    await window.fieldnotesData.deletePost(button.dataset.id);
-    renderTeamPosts();
-  } catch {
-    showMessage(teamMessage, "Could not delete the note.");
+    const session = await window.fieldnotesData.getSession();
+    const post = (await window.fieldnotesData.getPosts())
+      .find(item => item.id === button.dataset.id && item.author_id === session?.user.id);
+    if (!post) {
+      showMessage(teamMessage, "Could not find your note.");
+      return;
+    }
+
+    pendingDeleteId = post.id;
+    deleteModalMessage.textContent = `"${post.title}" will be permanently removed from your published notes.`;
+    deleteModal.hidden = false;
+    cancelDeleteButton.focus();
+  } catch (error) {
+    showMessage(teamMessage, `Could not prepare the note for deletion: ${error.message}`);
+    console.error("Preparing note deletion failed", error);
   }
+});
+
+cancelDeleteButton.addEventListener("click", () => {
+  pendingDeleteId = null;
+  deleteModal.hidden = true;
+});
+
+confirmDeleteButton.addEventListener("click", async () => {
+  if (!pendingDeleteId) return;
+  const postId = pendingDeleteId;
+  pendingDeleteId = null;
+  deleteModal.hidden = true;
+  try {
+    await window.fieldnotesData.deletePost(postId);
+    await renderTeamPosts();
+  } catch (error) {
+    showMessage(teamMessage, "Could not delete the note.");
+    console.error("Deleting note failed", error);
+  }
+});
+
+deleteModal.addEventListener("click", event => {
+  if (event.target === deleteModal) cancelDeleteButton.click();
+});
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && !deleteModal.hidden) cancelDeleteButton.click();
 });
 
 document.getElementById("logout-button").addEventListener("click", async () => {

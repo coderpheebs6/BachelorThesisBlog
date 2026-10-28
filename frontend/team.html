@@ -83,10 +83,21 @@
         <p id="team-message" class="form-message" aria-live="polite"></p>
       </form>
       <div>
-        <p class="eyebrow">PUBLISHED THESIS UPDATES</p>
+        <p class="eyebrow">YOUR PUBLISHED THESIS UPDATES</p>
         <div id="team-posts" class="team-posts"></div>
       </div>
     </section>
   </main>
+  <div id="delete-modal" class="delete-modal" hidden>
+    <div class="delete-modal-card" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+      <p class="eyebrow">REMOVE NOTE</p>
+      <h2 id="delete-modal-title">Delete this note?</h2>
+      <p id="delete-modal-message" class="muted">This action cannot be undone.</p>
+      <div class="delete-modal-actions">
+        <button id="cancel-delete-button" class="text-button" type="button">KEEP NOTE</button>
+        <button id="confirm-delete-button" class="delete-confirm-button" type="button">DELETE NOTE</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
