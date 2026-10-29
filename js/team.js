@@ -16,6 +16,14 @@ const deleteModal = document.getElementById("delete-modal");
 const deleteModalMessage = document.getElementById("delete-modal-message");
 const cancelDeleteButton = document.getElementById("cancel-delete-button");
 const confirmDeleteButton = document.getElementById("confirm-delete-button");
+const previewModal = document.getElementById("preview-modal");
+const closePreviewButton = document.getElementById("close-preview-button");
+const previewCategory = document.getElementById("preview-category");
+const previewTitle = document.getElementById("preview-title");
+const previewDate = document.getElementById("preview-date");
+const previewBody = document.getElementById("preview-body");
+const previewTakeaway = document.getElementById("preview-takeaway");
+const previewAi = document.getElementById("preview-ai");
 const noteFormLabel = document.getElementById("note-form-label");
 const noteSubmitButton = document.getElementById("note-submit-button");
 const cancelEditButton = document.getElementById("cancel-edit-button");
@@ -35,6 +43,29 @@ function openDeleteModal(post) {
   deleteModal.classList.add("is-open");
   deleteModal.setAttribute("aria-hidden", "false");
   cancelDeleteButton.focus();
+}
+
+function closePreview() {
+  previewModal.classList.remove("is-open");
+  previewModal.setAttribute("aria-hidden", "true");
+}
+
+function openPreview(post) {
+  previewCategory.textContent = `${post.category.toUpperCase()} / THESIS NOTE`;
+  previewTitle.textContent = post.title;
+  previewDate.textContent = formatDate(post.date);
+  previewBody.textContent = post.body;
+  previewTakeaway.hidden = !post.conclusion;
+  previewTakeaway.innerHTML = post.conclusion
+    ? `<strong><span class="takeaway-icon" aria-hidden="true"></span>KEY TAKEAWAY</strong><p>${escapeHTML(post.conclusion)}</p>`
+    : "";
+  previewAi.hidden = !post.ai_usage;
+  previewAi.innerHTML = post.ai_usage
+    ? `<span class="ai-icon" aria-hidden="true">✦</span><div><span class="eyebrow">AI USE</span><p>${escapeHTML(post.ai_usage)}</p></div>`
+    : "";
+  previewModal.classList.add("is-open");
+  previewModal.setAttribute("aria-hidden", "false");
+  closePreviewButton.focus();
 }
 
 function showMessage(element, message) {
@@ -86,8 +117,8 @@ async function renderTeamPosts() {
     ownPosts.forEach(post => ownPostsById.set(String(post.id), post));
     teamPosts.innerHTML = ownPosts.length
       ? ownPosts.map(post => `
-        <article class="team-post">
-          <div>
+        <article class="team-post" data-id="${escapeHTML(post.id)}">
+          <div class="team-post-content" tabindex="0" role="button" aria-label="Preview ${escapeHTML(post.title)}">
             <span class="note-tag">${escapeHTML(post.category)} / ${formatDate(post.date)}</span>
             <h2>${escapeHTML(post.title)}</h2>
             <span class="muted">${escapeHTML(post.author_name || "PKL Studio team")}</span>
@@ -213,6 +244,12 @@ teamForm.addEventListener("submit", async event => {
 });
 
 teamPosts.addEventListener("click", async event => {
+  const postContent = event.target.closest(".team-post-content");
+  if (postContent) {
+    const post = ownPostsById.get(String(postContent.closest(".team-post").dataset.id));
+    if (post) openPreview(post);
+    return;
+  }
   const editButton = event.target.closest(".edit-team-post");
   if (editButton) {
     const post = ownPostsById.get(String(editButton.dataset.id));
@@ -256,6 +293,14 @@ teamPosts.addEventListener("click", async event => {
   }
 });
 
+teamPosts.addEventListener("keydown", event => {
+  if ((event.key !== "Enter" && event.key !== " ") || !event.target.closest(".team-post-content")) return;
+  event.preventDefault();
+  const content = event.target.closest(".team-post-content");
+  const post = ownPostsById.get(String(content.closest(".team-post").dataset.id));
+  if (post) openPreview(post);
+});
+
 cancelEditButton.addEventListener("click", () => {
   editingPostId = null;
   teamForm.reset();
@@ -286,8 +331,14 @@ deleteModal.addEventListener("click", event => {
   if (event.target === deleteModal) closeDeleteModal();
 });
 
+closePreviewButton.addEventListener("click", closePreview);
+previewModal.addEventListener("click", event => {
+  if (event.target === previewModal) closePreview();
+});
+
 document.addEventListener("keydown", event => {
   if (event.key === "Escape" && deleteModal.classList.contains("is-open")) closeDeleteModal();
+  if (event.key === "Escape" && previewModal.classList.contains("is-open")) closePreview();
 });
 
 document.getElementById("logout-button").addEventListener("click", async () => {

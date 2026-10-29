@@ -10,7 +10,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="data.js?v=3" defer></script>
   <script src="team.js?v=3" defer></script>
-  <link rel="stylesheet" crossorigin href="/BachelorThesisBlog/assets/style-BIj1pw-y.css">
+  <link rel="stylesheet" crossorigin href="/BachelorThesisBlog/assets/style-CjIrJ4i4.css">
 </head>
 <body class="team-page">
   <nav class="navbar">
@@ -101,6 +101,17 @@
         <button id="confirm-delete-button" class="delete-confirm-button" type="button">DELETE NOTE</button>
       </div>
     </div>
+  </div>
+  <div id="preview-modal" class="preview-modal" aria-hidden="true">
+    <article class="preview-card" role="dialog" aria-modal="true" aria-labelledby="preview-title">
+      <button id="close-preview-button" class="preview-close" type="button" aria-label="Close preview">×</button>
+      <p id="preview-category" class="eyebrow"></p>
+      <h2 id="preview-title"></h2>
+      <p id="preview-date" class="muted"></p>
+      <div id="preview-body" class="preview-body"></div>
+      <div id="preview-takeaway" class="preview-section" hidden></div>
+      <div id="preview-ai" class="preview-section preview-ai" hidden></div>
+    </article>
   </div>
 </body>
 </html>

@@ -504,19 +504,33 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .team-panel h1 { font-size: clamp(3rem, 8vw, 6rem); line-height: .95; margin: 12px 0 24px; }
 .team-panel h1 span { color: var(--lime); }
 .team-intro { color: var(--muted); max-width: 34rem; margin-bottom: 44px; }
-.team-form { display: grid; gap: 12px; max-width: 680px; }
+.team-form { display: grid; gap: 12px; width: 100%; max-width: none; }
 .team-form label { margin-top: 18px; color: var(--muted); font: .67rem var(--mono); letter-spacing: .07em; }
 .team-form input, .team-form textarea, .team-form select {
-  width: 100%; padding: 12px 0; border: 0; border-bottom: 1px solid var(--line); background: transparent;
-  color: var(--ink); font: inherit; border-radius: 0; outline: 0; transition: border-color .2s ease;
+  width: 100%; padding: 13px 14px; border: 1px solid var(--line); background: var(--surface);
+  color: var(--ink); font: inherit; border-radius: 0; outline: 0; transition: border-color .2s ease, background .2s ease;
 }
 .team-form textarea {
   min-height: 120px;
-  resize: vertical;
+  resize: none;
   line-height: 1.55;
 }
 .team-form input:focus, .team-form textarea:focus, .team-form select:focus {
-  border-bottom-color: var(--lime);
+  border-color: var(--lime);
+  background: var(--surface-hover);
+}
+.team-form select {
+  appearance: none;
+  padding-right: 44px;
+  background-color: var(--surface);
+  background-image: linear-gradient(45deg, transparent 50%, var(--lime) 50%), linear-gradient(135deg, var(--lime) 50%, transparent 50%);
+  background-position: calc(100% - 19px) 50%, calc(100% - 13px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+.team-form select:focus {
+  background-color: var(--surface-hover);
 }
 .team-heading { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; }
 .text-button { border: 0; background: none; color: var(--muted); cursor: pointer; font: inherit; text-decoration: underline; }
@@ -526,12 +540,12 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .team-post h2 { font-size: 1.1rem; margin: 5px 0 0; }
 .team-post-actions { display: flex; gap: 16px; align-items: center; flex-shrink: 0; }
 .cancel-edit-button { justify-self: start; }
-.profile-form { border-top: 1px solid var(--line); padding: 28px 0 0; margin: 42px 0 58px; display: grid; gap: 10px; }
+.profile-form { width: 100%; border-top: 1px solid var(--line); padding: 28px 0 0; margin: 42px 0 58px; display: grid; gap: 10px; }
 .profile-form[hidden], .profile-card[hidden] { display: none; }
 .profile-form > div:first-child { margin-bottom: 4px; }
-.profile-form input { width: 100%; padding: 12px 0; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); font: inherit; outline: 0; }
-.profile-form input:focus { border-bottom-color: var(--lime); }
-.profile-form input[type="file"] { padding: 10px 0; border-bottom: 1px dashed var(--line); }
+.profile-form input { width: 100%; padding: 13px 14px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; outline: 0; }
+.profile-form input:focus { border-color: var(--lime); background: var(--surface-hover); }
+.profile-form input[type="file"] { padding: 10px 14px; border-style: solid; cursor: pointer; }
 .avatar-preview { min-height: 0; }
 .avatar-preview img { width: 72px; height: 72px; object-fit: cover; border-radius: 50%; border: 2px solid var(--lime); }
 .profile-card { display: flex; justify-content: space-between; align-items: center; gap: 24px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 22px 0; margin: 42px 0 58px; }
@@ -557,13 +571,73 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .avatar-image { width: 100%; height: 100%; object-fit: cover; }
 .avatar-initials { line-height: 1; }
 .takeaway { padding: 12px 14px; border-left: 2px solid var(--lime); background: rgba(215, 255, 0, .06); font-size: .88rem !important; }
-.takeaway strong { display: block; color: var(--lime); font: .62rem var(--mono); letter-spacing: .08em; margin-bottom: 5px; }
+.takeaway strong { display: flex; align-items: center; gap: 7px; color: var(--lime); font: .62rem var(--mono); letter-spacing: .08em; margin-bottom: 5px; }
+.note-heading { display: flex; align-items: center; gap: 8px; }
+.note-icon, .takeaway-icon { display: inline-grid; place-items: center; position: relative; width: 24px; height: 24px; flex: 0 0 24px; border: 1px solid currentColor; border-radius: 50%; color: var(--muted); }
+.note-icon::before { content: ""; width: 8px; height: 11px; border: 1px solid currentColor; border-radius: 1px; }
+.note-icon::after { content: ""; position: absolute; width: 5px; height: 1px; background: currentColor; }
+.takeaway-icon { color: var(--lime); }
+.takeaway-icon::after { content: ""; width: 7px; height: 4px; border-left: 1px solid currentColor; border-bottom: 1px solid currentColor; transform: rotate(-45deg) translate(1px, -1px); }
 .ai-summary { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-left: 2px solid var(--blue); background: rgba(168, 201, 243, .1); font-size: .84rem !important; }
 .ai-summary strong, .article-ai .eyebrow { display: block; color: var(--blue); font: .62rem var(--mono); letter-spacing: .08em; margin-bottom: 5px; }
 .ai-icon { display: inline-grid; place-items: center; width: 24px; height: 24px; flex: 0 0 24px; border: 1px solid currentColor; border-radius: 50%; color: var(--blue); font-size: 1rem; line-height: 1; }
 .article-author { margin: 20px 0 10px; }
 .article-takeaway { border: 1px solid var(--line); border-left: 3px solid var(--lime); padding: 20px; margin-top: 38px; }
+.takeaway-heading { display: flex; align-items: center; gap: 8px; }
 .article-takeaway p { margin: 10px 0 0; font-size: 1.1rem; }
 .article-ai { display: flex; align-items: flex-start; gap: 14px; border: 1px solid var(--line); border-left: 3px solid var(--blue); padding: 20px; margin-top: 18px; }
 .article-ai .ai-icon { margin-top: 2px; }
+.team-post-content { cursor: pointer; min-width: 0; }
+.team-post-content:hover h2 { color: var(--lime); }
+.team-post-content:focus-visible { outline: 1px solid var(--lime); outline-offset: 6px; }
+.preview-modal { position: fixed; inset: 0; z-index: 25; display: none; place-items: center; padding: 28px; background: rgba(23, 23, 20, .78); }
+.preview-modal.is-open { display: grid; }
+.preview-card {
+  position: relative;
+  width: min(100%, 720px);
+  max-height: min(820px, 90vh);
+  overflow-y: auto;
+  padding: 42px clamp(24px, 5vw, 58px) 50px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .35);
+  scrollbar-width: thin;
+  scrollbar-color: var(--lime) var(--surface);
+}
+.preview-card::-webkit-scrollbar { width: 9px; }
+.preview-card::-webkit-scrollbar-track { background: var(--surface); }
+.preview-card::-webkit-scrollbar-thumb { border: 2px solid var(--surface); background: var(--lime); }
+.preview-card::-webkit-scrollbar-thumb:hover { background: var(--ink); }
+.preview-close { position: absolute; top: 18px; right: 20px; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 1.8rem; line-height: 1; }
+.preview-close:hover { color: var(--lime); }
+.preview-card h2 { max-width: 580px; margin: 12px 0 8px; font-size: clamp(2rem, 5vw, 4rem); line-height: .98; }
+.preview-body { margin-top: 30px; white-space: pre-wrap; line-height: 1.75; overflow-wrap: anywhere; }
+.preview-section { margin-top: 30px; padding: 16px 18px; border-left: 2px solid var(--lime); background: rgba(215, 255, 0, .06); }
+.preview-section strong { display: flex; align-items: center; gap: 8px; color: var(--lime); font: .62rem var(--mono); letter-spacing: .08em; }
+.preview-section p { margin: 10px 0 0; }
+.preview-ai { display: flex; align-items: flex-start; gap: 14px; border-left-color: var(--blue); background: rgba(168, 201, 243, .1); }
+.preview-ai .eyebrow { color: var(--blue); margin: 0; }
+.preview-ai .ai-icon { margin-top: 2px; }
 .article-ai p { margin: 10px 0 0; font-size: 1.05rem; }
+
+.team-form textarea {
+  scrollbar-width: thin;
+  scrollbar-color: var(--lime) var(--surface);
+}
+
+.team-form textarea::-webkit-scrollbar {
+  width: 9px;
+}
+
+.team-form textarea::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+
+.team-form textarea::-webkit-scrollbar-thumb {
+  border: 2px solid var(--surface);
+  background: var(--lime);
+}
+
+.team-form textarea::-webkit-scrollbar-thumb:hover {
+  background: var(--ink);
+}

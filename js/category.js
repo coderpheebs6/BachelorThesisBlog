@@ -61,10 +61,10 @@ async function renderCategory() {
 
   container.innerHTML = posts.map(post => `
     <a class="note-card" href="article.html?id=${encodeURIComponent(post.id)}">
-      <span class="note-tag">${escapeHTML(categoryLabel(category))} / ${formatDate(post.date)}</span>
+      <span class="note-tag"><span class="note-icon" aria-hidden="true"></span>${escapeHTML(categoryLabel(category))} / ${formatDate(post.date)}</span>
       <h2>${escapeHTML(post.title)}</h2>
       <p>${escapeHTML(post.body.slice(0, 180))}${post.body.length > 180 ? "…" : ""}</p>
-      ${post.conclusion ? `<p class="takeaway"><strong>KEY TAKEAWAY</strong> ${escapeHTML(post.conclusion)}</p>` : ""}
+      ${post.conclusion ? `<p class="takeaway"><strong><span class="takeaway-icon" aria-hidden="true"></span>KEY TAKEAWAY</strong> ${escapeHTML(post.conclusion)}</p>` : ""}
       ${post.ai_usage ? `<p class="ai-summary"><span class="ai-icon" aria-hidden="true">✦</span><span><strong>AI USE</strong> ${escapeHTML(post.ai_usage)}</span></p>` : ""}
       <span class="note-footer">${authorMarkup(post)}<span class="read-more">OPEN NOTE ↗</span></span>
     </a>
@@ -109,12 +109,12 @@ async function renderArticle() {
   if (backLink) backLink.href = `${post.category}.html`;
 
   container.innerHTML = `
-    <p class="eyebrow">DEVINE THESIS / ${escapeHTML(categoryLabel(post.category))}</p>
+    <p class="eyebrow note-heading"><span class="note-icon" aria-hidden="true"></span>DEVINE THESIS / ${escapeHTML(categoryLabel(post.category))}</p>
     <p class="article-date">${formatDate(post.date)} · ${escapeHTML(categoryLabel(post.category))}</p>
     <div class="article-author">${authorMarkup(post)}</div>
     <h1>${escapeHTML(post.title)}</h1>
     <div class="article-body">${escapeHTML(post.body)}</div>
-    ${post.conclusion ? `<aside class="article-takeaway"><span class="eyebrow">KEY TAKEAWAY</span><p>${escapeHTML(post.conclusion)}</p></aside>` : ""}
+    ${post.conclusion ? `<aside class="article-takeaway"><span class="eyebrow takeaway-heading"><span class="takeaway-icon" aria-hidden="true"></span>KEY TAKEAWAY</span><p>${escapeHTML(post.conclusion)}</p></aside>` : ""}
     ${post.ai_usage ? `<aside class="article-ai"><span class="ai-icon" aria-hidden="true">✦</span><div><span class="eyebrow">AI USE</span><p>${escapeHTML(post.ai_usage)}</p></div></aside>` : ""}
   `;
 
