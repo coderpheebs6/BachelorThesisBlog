@@ -60,18 +60,16 @@ async function renderCategory() {
   }
 
   container.innerHTML = posts.map(post => `
-    <a class="note-card" href="article.html?id=${encodeURIComponent(post.id)}">
-      <span class="note-tag"><span class="note-icon" aria-hidden="true"></span>${escapeHTML(categoryLabel(category))} / ${formatDate(post.date)}</span>
-      <h2>${escapeHTML(post.title)}</h2>
-      <p>${escapeHTML(post.body.slice(0, 180))}${post.body.length > 180 ? "…" : ""}</p>
-      ${post.conclusion ? `<p class="takeaway"><span class="takeaway-icon" aria-hidden="true"></span><span class="takeaway-content"><strong>KEY TAKEAWAY</strong><span class="takeaway-text">${escapeHTML(post.conclusion)}</span></span></p>` : ""}
-      ${post.ai_usage ? `<p class="ai-summary"><span class="ai-icon" aria-hidden="true">✦</span><span><strong>AI USE</strong> ${escapeHTML(post.ai_usage)}</span></p>` : ""}
-      <span class="note-footer">${authorMarkup(post)}<span class="read-more">OPEN NOTE ↗</span></span>
+    <a class="latest-card" href="article.html?id=${encodeURIComponent(post.id)}">
+      <span class="note-tag">${escapeHTML(post.category)} / ${formatDate(post.date)}</span>
+      <h3>${escapeHTML(post.title)}</h3>
+      <p>${escapeHTML(post.body.slice(0, 140))}${post.body.length > 140 ? "…" : ""}</p>
+      <span class="note-footer">${authorMarkup(post)}<span class="read-more">READ NOTE ↗</span></span>
     </a>
   `).join("");
 
   if (window.gsap && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    gsap.from(".note-card", {
+    gsap.from(".latest-card", {
       opacity: 0,
       y: 25,
       stagger: 0.1,
