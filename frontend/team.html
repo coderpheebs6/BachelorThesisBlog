@@ -9,8 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="data.js?v=7" defer></script>
-  <script src="team.js?v=10" defer></script>
+  <script src="data.js?v=8" defer></script>
+  <script src="team.js?v=19" defer></script>
 </head>
 <body class="team-page">
   <nav class="navbar">
@@ -82,9 +82,10 @@
         <form id="team-chat-form" class="team-chat-form">
           <label for="team-chat-input">MESSAGE THE TEAM</label>
           <div class="team-chat-input-row">
-            <textarea id="team-chat-input" rows="2" maxlength="1000" required placeholder="Share an idea, question or update..."></textarea>
+            <div id="team-chat-input" class="team-chat-input" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Share an idea, question or update..."></div>
             <button type="submit" class="submit-button">SEND <span>↗</span></button>
           </div>
+          <div id="chat-command-menu" class="chat-command-menu" hidden></div>
           <p id="chat-message" class="form-message" aria-live="polite"></p>
         </form>
       </section>
@@ -119,6 +120,10 @@
       <div>
         <p class="eyebrow">YOUR PUBLISHED THESIS UPDATES</p>
         <div id="team-posts" class="team-posts"></div>
+      </div>
+      <div class="team-drafts-section">
+        <p class="eyebrow">YOUR SAVED DRAFTS</p>
+        <div id="team-drafts" class="team-posts"></div>
       </div>
     </section>
   </main>

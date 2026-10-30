@@ -5,6 +5,7 @@ const teamForm = document.getElementById("team-form");
 const loginMessage = document.getElementById("login-message");
 const teamMessage = document.getElementById("team-message");
 const teamPosts = document.getElementById("team-posts");
+const teamDrafts = document.getElementById("team-drafts");
 const profileForm = document.getElementById("profile-form");
 const profileMessage = document.getElementById("profile-message");
 const avatarPreview = document.getElementById("avatar-preview");
@@ -36,10 +37,52 @@ const chatToggleButton = document.getElementById("chat-toggle-button");
 const teamChatSection = document.getElementById("team-chat-section");
 const closeChatButton = document.getElementById("close-chat-button");
 const chatOverlay = document.getElementById("chat-overlay");
+const chatCommandMenu = document.getElementById("chat-command-menu");
 let pendingDeleteId = null;
 let editingPostId = null;
 let unsubscribeChat = null;
 const ownPostsById = new Map();
+const ownDraftsById = new Map();
+let chatPosts = [];
+let chatPostsLoaded = false;
+let chatPostsLoading = null;
+let chatPostsError = null;
+
+function getChatInputText() {
+  return teamChatInput.textContent;
+}
+
+function getChatInputBeforeCaret() {
+  const selection = window.getSelection();
+  if (!selection.rangeCount) return getChatInputText();
+  const range = selection.getRangeAt(0).cloneRange();
+  range.selectNodeContents(teamChatInput);
+  range.setEnd(selection.getRangeAt(0).startContainer, selection.getRangeAt(0).startOffset);
+  return range.toString();
+}
+
+function serializeChatInput() {
+  return [...teamChatInput.childNodes].map(node => {
+    if (node.nodeType === Node.TEXT_NODE) return node.textContent;
+    if (node.nodeType === Node.ELEMENT_NODE && node.matches(".chat-input-post-link")) {
+      return `[[post:${node.dataset.postId}|${encodeURIComponent(node.textContent)}]]`;
+    }
+    return node.textContent;
+  }).join("");
+}
+
+function renderChatText(message) {
+  const escaped = escapeHTML(message);
+  return escaped.replace(/\[\[post:([^|\]]+)\|([^\]]+)\]\]/g, (_, id, encodedTitle) => {
+    let title = encodedTitle;
+    try {
+      title = decodeURIComponent(encodedTitle);
+    } catch {
+      title = encodedTitle;
+    }
+    return `<a class="chat-post-link" href="article.html?id=${encodeURIComponent(id)}">${escapeHTML(title)}</a>`;
+  });
+}
 
 async function renderChatMessages(messages) {
   const session = await window.fieldnotesData.getSession();
@@ -56,7 +99,7 @@ async function renderChatMessages(messages) {
           </div>
           <time datetime="${escapeHTML(item.created_at)}">${formatChatTime(item.created_at)}</time>
         </div>
-        <p class="team-chat-message-body">${escapeHTML(item.message)}</p>
+        <p class="team-chat-message-body">${renderChatText(item.message)}</p>
         ${item.author_id === currentUserId ? `
           <div class="team-chat-message-actions">
             <button class="chat-edit-button" data-id="${escapeHTML(item.id)}" type="button">EDIT</button>
@@ -68,6 +111,92 @@ async function renderChatMessages(messages) {
     : `<p class="muted">No messages yet. Start the conversation.</p>`;
   teamChatMessages.scrollTop = teamChatMessages.scrollHeight;
 }
+
+function hideChatCommandMenu() {
+  chatCommandMenu.hidden = true;
+  chatCommandMenu.innerHTML = "";
+}
+
+function showChatCommandMenu(query) {
+  const filteredPosts = chatPosts.filter(post =>
+    post.title.toLowerCase().includes(query.toLowerCase())
+  );
+
+  chatCommandMenu.innerHTML = filteredPosts.length
+    ? filteredPosts.map(post => `
+      <button class="chat-command-item" type="button" data-post-id="${escapeHTML(post.id)}">
+        <span class="chat-command-icon">↗</span>
+        <span><strong>${escapeHTML(post.title)}</strong><small>${escapeHTML(post.category.toUpperCase())} / POST</small></span>
+      </button>
+    `).join("")
+    : `<p class="chat-command-empty">No posts found.</p>`;
+  chatCommandMenu.hidden = false;
+}
+
+async function updateChatCommandMenu() {
+  const beforeCursor = getChatInputBeforeCaret();
+  const match = beforeCursor.match(/(?:^|\s)\/([^\s]*)$/);
+  if (!match) {
+    hideChatCommandMenu();
+    return;
+  }
+  if (!chatPostsLoaded) {
+    chatCommandMenu.hidden = false;
+    chatCommandMenu.innerHTML = `<p class="chat-command-empty">Loading posts...</p>`;
+    await loadChatPosts();
+  }
+  const currentBeforeCursor = getChatInputBeforeCaret();
+  const currentMatch = currentBeforeCursor.match(/(?:^|\s)\/([^\s]*)$/);
+  if (!currentMatch) return;
+  if (chatPostsError) {
+    chatCommandMenu.hidden = false;
+    chatCommandMenu.innerHTML = `<p class="chat-command-empty">Could not load posts: ${escapeHTML(chatPostsError)}</p>`;
+    return;
+  }
+  showChatCommandMenu(currentMatch[1]);
+}
+
+teamChatInput.addEventListener("input", updateChatCommandMenu);
+teamChatInput.addEventListener("keydown", event => {
+  if (event.key === "Escape") hideChatCommandMenu();
+});
+
+chatCommandMenu.addEventListener("click", event => {
+  const button = event.target.closest(".chat-command-item");
+  if (!button) return;
+  const post = chatPosts.find(item => String(item.id) === button.dataset.postId);
+  if (!post) return;
+
+  const beforeCursor = getChatInputBeforeCaret();
+  const match = beforeCursor.match(/(?:^|\s)\/([^\s]*)$/);
+  if (!match) return;
+  const selection = window.getSelection();
+  const range = selection.getRangeAt(0);
+  const textNode = range.startContainer;
+  const typedText = textNode.textContent.slice(0, range.startOffset);
+  const slashIndex = typedText.lastIndexOf("/");
+  const replacementRange = document.createRange();
+  replacementRange.setStart(textNode, slashIndex);
+  replacementRange.setEnd(textNode, range.startOffset);
+  replacementRange.deleteContents();
+  const link = document.createElement("a");
+  link.className = "chat-input-post-link";
+  link.dataset.postId = post.id;
+  link.textContent = post.title;
+  link.href = `article.html?id=${encodeURIComponent(post.id)}`;
+  link.target = "_blank";
+  link.rel = "noopener";
+  replacementRange.insertNode(link);
+  const space = document.createTextNode(" ");
+  link.after(space);
+  selection.removeAllRanges();
+  const caret = document.createRange();
+  caret.setStartAfter(space);
+  caret.collapse(true);
+  selection.addRange(caret);
+  hideChatCommandMenu();
+  teamChatInput.focus();
+});
 
 teamChatMessages.addEventListener("click", async event => {
   const editButton = event.target.closest(".chat-edit-button");
@@ -125,6 +254,29 @@ async function renderChatMessagesFromDatabase() {
     teamChatMessages.innerHTML = `<p class="form-message">Could not load team messages: ${escapeHTML(error.message)}</p>`;
     console.error("Loading team chat failed", error);
   }
+
+}
+
+async function loadChatPosts() {
+  if (chatPostsLoading) return chatPostsLoading;
+
+  chatPostsLoading = (async () => {
+    chatPostsError = null;
+    try {
+      chatPosts = (await window.fieldnotesData.getPosts())
+        .sort((first, second) => new Date(second.date) - new Date(first.date));
+      chatPostsLoaded = true;
+    } catch (error) {
+      chatPosts = [];
+      chatPostsLoaded = false;
+      chatPostsError = error.message;
+      console.error("Loading posts for chat links failed", error);
+    } finally {
+      chatPostsLoading = null;
+    }
+  })();
+
+  await chatPostsLoading;
 }
 
 function closeDeleteModal() {
@@ -215,13 +367,39 @@ function fillNoteForm(note) {
 
 async function loadDraft() {
   try {
-    const draft = await window.fieldnotesData.getDraft();
+    const draft = (await window.fieldnotesData.getDrafts())[0];
     if (!draft) return;
     fillNoteForm(draft);
     showMessage(teamMessage, "Draft restored.");
   } catch (error) {
     showMessage(teamMessage, `Could not load your draft: ${error.message}`);
     console.error("Loading draft failed", error);
+  }
+}
+
+async function renderTeamDrafts() {
+  try {
+    const drafts = await window.fieldnotesData.getDrafts();
+    ownDraftsById.clear();
+    drafts.forEach(draft => ownDraftsById.set(String(draft.id), draft));
+    teamDrafts.innerHTML = drafts.length
+      ? drafts.map(draft => `
+        <article class="team-post team-draft" data-id="${escapeHTML(draft.id)}">
+          <div class="team-post-content">
+            <span class="note-tag">${escapeHTML(draft.category)} / DRAFT · SAVED ${formatDate(draft.updated_at)}</span>
+            <h2>${escapeHTML(draft.title || "Untitled draft")}</h2>
+            <span class="muted">${escapeHTML(draft.body?.slice(0, 100) || "No note content yet.")}</span>
+          </div>
+          <div class="team-post-actions">
+            <button class="text-button edit-team-draft" data-id="${escapeHTML(draft.id)}" type="button">EDIT</button>
+            <button class="text-button delete-team-draft" data-id="${escapeHTML(draft.id)}" type="button">DELETE</button>
+          </div>
+        </article>
+      `).join("")
+      : `<p class="muted">You have no saved drafts yet.</p>`;
+  } catch (error) {
+    teamDrafts.innerHTML = `<p class="form-message">Could not load drafts: ${escapeHTML(error.message)}</p>`;
+    console.error("Loading drafts failed", error);
   }
 }
 
@@ -289,7 +467,9 @@ async function updateAuthView() {
     }
     renderProfile(profile);
     renderTeamPosts();
+    renderTeamDrafts();
     renderChatMessagesFromDatabase();
+    loadChatPosts();
     loadDraft();
     if (!unsubscribeChat) {
       unsubscribeChat = window.fieldnotesData.subscribeToChatMessages(() => {
@@ -387,13 +567,13 @@ chatOverlay.addEventListener("click", closeChat);
 
 teamChatForm.addEventListener("submit", async event => {
   event.preventDefault();
-  const message = teamChatInput.value.trim();
+  const message = serializeChatInput().trim();
   if (!message) return;
 
   showMessage(chatMessage, "Sending...");
   try {
     await window.fieldnotesData.addChatMessage(message);
-    teamChatInput.value = "";
+    teamChatInput.replaceChildren();
     showMessage(chatMessage, "");
     await renderChatMessagesFromDatabase();
   } catch (error) {
@@ -422,6 +602,7 @@ teamForm.addEventListener("submit", async event => {
     }
     teamForm.reset();
     await renderTeamPosts();
+    await renderTeamDrafts();
   } catch (error) {
     showMessage(teamMessage, `Could not save the note: ${error.message}`);
     console.error("Saving note failed", error);
@@ -438,10 +619,39 @@ saveDraftButton.addEventListener("click", async () => {
   showMessage(teamMessage, "Saving draft...");
   try {
     await window.fieldnotesData.saveDraft(draft);
+    teamForm.reset();
+    editingPostId = null;
+    noteFormLabel.textContent = "01 / WRITE THE NOTE";
+    noteSubmitButton.innerHTML = "PUBLISH NOTE <span>↗</span>";
+    cancelEditButton.hidden = true;
     showMessage(teamMessage, "Draft saved.");
+    await renderTeamDrafts();
   } catch (error) {
     showMessage(teamMessage, `Could not save your draft: ${error.message}`);
     console.error("Saving draft failed", error);
+  }
+});
+
+teamDrafts.addEventListener("click", async event => {
+  const editButton = event.target.closest(".edit-team-draft");
+  const deleteButton = event.target.closest(".delete-team-draft");
+  if (editButton) {
+    const draft = ownDraftsById.get(String(editButton.dataset.id));
+    if (!draft) return;
+    fillNoteForm(draft);
+    teamForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    document.getElementById("title").focus();
+    showMessage(teamMessage, "Draft loaded.");
+    return;
+  }
+  if (deleteButton && window.confirm("Delete this draft?")) {
+    try {
+      await window.fieldnotesData.deleteDraft(deleteButton.dataset.id);
+      await renderTeamDrafts();
+    } catch (error) {
+      showMessage(teamMessage, `Could not delete the draft: ${error.message}`);
+      console.error("Deleting draft failed", error);
+    }
   }
 });
 

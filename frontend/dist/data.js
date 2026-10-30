@@ -215,15 +215,19 @@ window.fieldnotesData = {
     if (error) throw error;
   },
   async getDraft() {
-    if (!supabaseClient) return null;
+    const drafts = await this.getDrafts();
+    return drafts[0] || null;
+  },
+  async getDrafts() {
+    if (!supabaseClient) return [];
     const session = await this.getSession();
-    if (!session?.user?.id) return null;
+    if (!session?.user?.id) return [];
 
     const { data, error } = await supabaseClient
       .from("team_drafts")
-      .select("category, title, body, conclusion, ai_usage, updated_at")
+      .select("id, category, title, body, conclusion, ai_usage, author_id, updated_at")
       .eq("author_id", session.user.id)
-      .maybeSingle();
+      .order("updated_at", { ascending: false });
 
     if (error) throw error;
     return data;
@@ -239,15 +243,17 @@ window.fieldnotesData = {
 
     if (error) throw error;
   },
-  async deleteDraft() {
+  async deleteDraft(id) {
     if (!supabaseClient) return;
     const session = await this.getSession();
     if (!session?.user?.id) return;
 
-    const { error } = await supabaseClient
+    let query = supabaseClient
       .from("team_drafts")
       .delete()
       .eq("author_id", session.user.id);
+    if (id) query = query.eq("id", id);
+    const { error } = await query;
 
     if (error) throw error;
   },
