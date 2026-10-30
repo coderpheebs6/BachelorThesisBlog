@@ -57,7 +57,7 @@ function openPreview(post) {
   previewBody.textContent = post.body;
   previewTakeaway.hidden = !post.conclusion;
   previewTakeaway.innerHTML = post.conclusion
-    ? `<strong><span class="takeaway-icon" aria-hidden="true"></span>KEY TAKEAWAY</strong><p>${escapeHTML(post.conclusion)}</p>`
+    ? `<span class="takeaway-icon" aria-hidden="true"></span><div><strong>KEY TAKEAWAY</strong><p>${escapeHTML(post.conclusion)}</p></div>`
     : "";
   previewAi.hidden = !post.ai_usage;
   previewAi.innerHTML = post.ai_usage

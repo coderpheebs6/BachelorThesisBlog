@@ -584,8 +584,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .ai-summary strong, .article-ai .eyebrow { display: block; color: var(--blue); font: .62rem var(--mono); letter-spacing: .08em; margin-bottom: 5px; }
 .ai-icon { display: inline-grid; place-items: center; width: 24px; height: 24px; flex: 0 0 24px; border: 1px solid currentColor; border-radius: 50%; color: var(--blue); font-size: 1rem; line-height: 1; }
 .article-author { margin: 20px 0 10px; }
-.article-takeaway { border: 1px solid var(--line); border-left: 3px solid var(--lime); padding: 20px; margin-top: 38px; }
-.takeaway-heading { display: flex; align-items: center; gap: 8px; }
+.article-takeaway { display: flex; align-items: flex-start; gap: 14px; border: 1px solid var(--line); border-left: 3px solid var(--lime); padding: 20px; margin-top: 38px; }
+.article-takeaway .takeaway-icon { margin-top: 2px; }
+.takeaway-heading { display: block; }
 .article-takeaway p { margin: 10px 0 0; font-size: 1.1rem; }
 .article-ai { display: flex; align-items: flex-start; gap: 14px; border: 1px solid var(--line); border-left: 3px solid var(--blue); padding: 20px; margin-top: 18px; }
 .article-ai .ai-icon { margin-top: 2px; }
@@ -615,7 +616,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .preview-card h2 { max-width: 580px; margin: 12px 0 8px; font-size: clamp(2rem, 5vw, 4rem); line-height: .98; }
 .preview-body { margin-top: 30px; white-space: pre-wrap; line-height: 1.75; overflow-wrap: anywhere; }
 .preview-section { margin-top: 30px; padding: 16px 18px; border-left: 2px solid var(--lime); background: rgba(215, 255, 0, .06); }
-.preview-section strong { display: flex; align-items: center; gap: 8px; color: var(--lime); font: .62rem var(--mono); letter-spacing: .08em; }
+.preview-section:not(.preview-ai) { display: flex; align-items: flex-start; gap: 10px; }
+.preview-section:not(.preview-ai) .takeaway-icon { margin-top: 2px; }
+.preview-section strong { display: block; color: var(--lime); font: .62rem var(--mono); letter-spacing: .08em; }
 .preview-section p { margin: 10px 0 0; }
 .preview-ai { display: flex; align-items: flex-start; gap: 14px; border-left-color: var(--blue); background: rgba(168, 201, 243, .1); }
 .preview-ai .eyebrow { color: var(--blue); margin: 0; }

@@ -114,7 +114,7 @@ async function renderArticle() {
     <div class="article-author">${authorMarkup(post)}</div>
     <h1>${escapeHTML(post.title)}</h1>
     <div class="article-body">${escapeHTML(post.body)}</div>
-    ${post.conclusion ? `<aside class="article-takeaway"><span class="eyebrow takeaway-heading"><span class="takeaway-icon" aria-hidden="true"></span>KEY TAKEAWAY</span><p>${escapeHTML(post.conclusion)}</p></aside>` : ""}
+    ${post.conclusion ? `<aside class="article-takeaway"><span class="takeaway-icon" aria-hidden="true"></span><div><span class="eyebrow takeaway-heading">KEY TAKEAWAY</span><p>${escapeHTML(post.conclusion)}</p></div></aside>` : ""}
     ${post.ai_usage ? `<aside class="article-ai"><span class="ai-icon" aria-hidden="true">✦</span><div><span class="eyebrow">AI USE</span><p>${escapeHTML(post.ai_usage)}</p></div></aside>` : ""}
   `;
 
