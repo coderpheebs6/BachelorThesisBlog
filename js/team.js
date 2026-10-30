@@ -119,7 +119,7 @@ async function renderTeamPosts() {
       ? ownPosts.map(post => `
         <article class="team-post" data-id="${escapeHTML(post.id)}">
           <div class="team-post-content" tabindex="0" role="button" aria-label="Preview ${escapeHTML(post.title)}">
-            <span class="note-tag">${escapeHTML(post.category)} / ${formatDate(post.date)}</span>
+            <span class="note-tag">${escapeHTML(post.category)} / PUBLISHED ${formatDate(post.date)}</span>
             <h2>${escapeHTML(post.title)}</h2>
             <span class="muted">${escapeHTML(post.author_name || "PKL Studio team")}</span>
           </div>

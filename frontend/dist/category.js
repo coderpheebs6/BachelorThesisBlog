@@ -64,7 +64,7 @@ async function renderCategory() {
       <span class="note-tag"><span class="note-icon" aria-hidden="true"></span>${escapeHTML(categoryLabel(category))} / ${formatDate(post.date)}</span>
       <h2>${escapeHTML(post.title)}</h2>
       <p>${escapeHTML(post.body.slice(0, 180))}${post.body.length > 180 ? "…" : ""}</p>
-      ${post.conclusion ? `<p class="takeaway"><strong><span class="takeaway-icon" aria-hidden="true"></span>KEY TAKEAWAY</strong> ${escapeHTML(post.conclusion)}</p>` : ""}
+      ${post.conclusion ? `<p class="takeaway"><span class="takeaway-icon" aria-hidden="true"></span><span class="takeaway-content"><strong>KEY TAKEAWAY</strong><span class="takeaway-text">${escapeHTML(post.conclusion)}</span></span></p>` : ""}
       ${post.ai_usage ? `<p class="ai-summary"><span class="ai-icon" aria-hidden="true">✦</span><span><strong>AI USE</strong> ${escapeHTML(post.ai_usage)}</span></p>` : ""}
       <span class="note-footer">${authorMarkup(post)}<span class="read-more">OPEN NOTE ↗</span></span>
     </a>
