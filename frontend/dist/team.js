@@ -40,6 +40,7 @@ const chatOverlay = document.getElementById("chat-overlay");
 const chatCommandMenu = document.getElementById("chat-command-menu");
 let pendingDeleteId = null;
 let editingPostId = null;
+let editingDraftId = null;
 let unsubscribeChat = null;
 const ownPostsById = new Map();
 const ownDraftsById = new Map();
@@ -400,6 +401,7 @@ async function loadDraft() {
   try {
     const draft = (await window.fieldnotesData.getDrafts())[0];
     if (!draft) return;
+    editingDraftId = draft.id;
     fillNoteForm(draft);
     showMessage(teamMessage, "Draft restored.");
   } catch (error) {
@@ -417,9 +419,13 @@ async function renderTeamDrafts() {
       ? drafts.map(draft => `
         <article class="team-post team-draft" data-id="${escapeHTML(draft.id)}">
           <div class="team-post-content">
-            <span class="note-tag">${escapeHTML(draft.category)} / DRAFT · SAVED ${formatDate(draft.updated_at)}</span>
+            <div class="team-post-meta">
+              <span class="team-post-category">${escapeHTML(draft.category)}</span>
+              <span class="team-post-status is-draft">DRAFT</span>
+              <time>${formatDate(draft.updated_at)}</time>
+            </div>
             <h2>${escapeHTML(draft.title || "Untitled draft")}</h2>
-            <span class="muted">${escapeHTML(draft.body?.slice(0, 100) || "No note content yet.")}</span>
+            <p class="team-post-excerpt">${escapeHTML(draft.body?.slice(0, 120) || "No note content yet.")}</p>
           </div>
           <div class="team-post-actions">
             <button class="text-button edit-team-draft" data-id="${escapeHTML(draft.id)}" type="button">EDIT</button>
@@ -463,9 +469,13 @@ async function renderTeamPosts() {
       ? ownPosts.map(post => `
         <article class="team-post" data-id="${escapeHTML(post.id)}">
           <div class="team-post-content" tabindex="0" role="button" aria-label="Preview ${escapeHTML(post.title)}">
-            <span class="note-tag">${escapeHTML(post.category)} / PUBLISHED ${formatDate(post.date)}</span>
+            <div class="team-post-meta">
+              <span class="team-post-category">${escapeHTML(post.category)}</span>
+              <span class="team-post-status is-published">PUBLISHED</span>
+              <time>${formatDate(post.date)}</time>
+            </div>
             <h2>${escapeHTML(post.title)}</h2>
-            <span class="muted">${escapeHTML(post.author_name || "PKL Studio team")}</span>
+            <p class="team-post-excerpt">${escapeHTML(post.body?.slice(0, 120) || "No note content yet.")}</p>
           </div>
           <div class="team-post-actions">
             <button class="text-button edit-team-post" data-id="${escapeHTML(post.id)}" type="button">EDIT</button>
@@ -629,7 +639,6 @@ teamForm.addEventListener("submit", async event => {
       showMessage(teamMessage, "Note updated.");
     } else {
       await window.fieldnotesData.addPost({ ...note, date: new Date().toISOString() });
-      await window.fieldnotesData.deleteDraft();
       showMessage(teamMessage, "Note published.");
     }
     teamForm.reset();
@@ -650,9 +659,10 @@ saveDraftButton.addEventListener("click", async () => {
 
   showMessage(teamMessage, "Saving draft...");
   try {
-    await window.fieldnotesData.saveDraft(draft);
+    await window.fieldnotesData.saveDraft({ ...draft, id: editingDraftId });
     teamForm.reset();
     editingPostId = null;
+    editingDraftId = null;
     noteFormLabel.textContent = "01 / WRITE THE NOTE";
     noteSubmitButton.innerHTML = "PUBLISH NOTE <span>↗</span>";
     cancelEditButton.hidden = true;
@@ -670,6 +680,7 @@ teamDrafts.addEventListener("click", async event => {
   if (editButton) {
     const draft = ownDraftsById.get(String(editButton.dataset.id));
     if (!draft) return;
+    editingDraftId = draft.id;
     fillNoteForm(draft);
     teamForm.scrollIntoView({ behavior: "smooth", block: "start" });
     document.getElementById("title").focus();

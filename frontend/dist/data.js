@@ -237,9 +237,20 @@ window.fieldnotesData = {
     const session = await this.getSession();
     if (!session?.user?.id) throw new Error("You must be logged in.");
 
-    const { error } = await supabaseClient
-      .from("team_drafts")
-      .upsert({ ...draft, author_id: session.user.id }, { onConflict: "author_id" });
+    const draftId = draft.id;
+    const draftValues = {
+      category: draft.category,
+      title: draft.title,
+      body: draft.body,
+      conclusion: draft.conclusion,
+      ai_usage: draft.ai_usage,
+      author_id: session.user.id,
+      updated_at: new Date().toISOString()
+    };
+    let query = supabaseClient.from("team_drafts");
+    const { error } = draftId
+      ? await query.update(draftValues).eq("id", draftId).eq("author_id", session.user.id)
+      : await query.insert(draftValues);
 
     if (error) throw error;
   },

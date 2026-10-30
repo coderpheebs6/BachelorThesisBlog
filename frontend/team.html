@@ -9,8 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="data.js?v=8" defer></script>
-  <script src="team.js?v=27" defer></script>
+  <script src="data.js?v=9" defer></script>
+  <script src="team.js?v=29" defer></script>
 </head>
 <body class="team-page">
   <nav class="navbar">
@@ -114,17 +114,29 @@
         <textarea id="conclusion" rows="3" maxlength="240" placeholder="What should the reader remember?"></textarea>
         <label for="ai-usage">AI USE <span class="optional">(optional)</span></label>
         <textarea id="ai-usage" rows="4" maxlength="500" placeholder="How did you use AI in this part of the process?"></textarea>
-        <button id="note-submit-button" type="submit" class="submit-button">PUBLISH NOTE <span>↗</span></button>
-        <button id="save-draft-button" type="button" class="text-button save-draft-button">SAVE DRAFT</button>
+        <div class="note-form-actions">
+          <button id="save-draft-button" type="button" class="submit-button secondary-button">SAVE DRAFT <span>↘</span></button>
+          <button id="note-submit-button" type="submit" class="submit-button">PUBLISH NOTE <span>↗</span></button>
+        </div>
         <button id="cancel-edit-button" type="button" class="text-button cancel-edit-button" hidden>CANCEL EDIT</button>
         <p id="team-message" class="form-message" aria-live="polite"></p>
       </form>
-      <div>
-        <p class="eyebrow">YOUR PUBLISHED THESIS UPDATES</p>
+      <div class="team-content-section">
+        <div class="team-content-heading">
+          <div>
+            <p class="eyebrow">YOUR PUBLISHED THESIS UPDATES</p>
+            <p class="muted">Notes that are live in the public archive.</p>
+          </div>
+        </div>
         <div id="team-posts" class="team-posts"></div>
       </div>
-      <div class="team-drafts-section">
-        <p class="eyebrow">YOUR SAVED DRAFTS</p>
+      <div class="team-content-section team-drafts-section">
+        <div class="team-content-heading">
+          <div>
+            <p class="eyebrow">YOUR SAVED DRAFTS</p>
+            <p class="muted">Notes still in progress and visible only to you.</p>
+          </div>
+        </div>
         <div id="team-drafts" class="team-posts"></div>
       </div>
     </section>
