@@ -47,6 +47,7 @@ let chatPosts = [];
 let chatPostsLoaded = false;
 let chatPostsLoading = null;
 let chatPostsError = null;
+let chatCommandSelection = 0;
 
 function getChatInputText() {
   return teamChatInput.textContent;
@@ -115,22 +116,28 @@ async function renderChatMessages(messages) {
 function hideChatCommandMenu() {
   chatCommandMenu.hidden = true;
   chatCommandMenu.innerHTML = "";
+  chatCommandSelection = 0;
 }
 
 function showChatCommandMenu(query) {
   const filteredPosts = chatPosts.filter(post =>
     post.title.toLowerCase().includes(query.toLowerCase())
   );
+  chatCommandSelection = Math.min(chatCommandSelection, Math.max(filteredPosts.length - 1, 0));
 
   chatCommandMenu.innerHTML = filteredPosts.length
-    ? filteredPosts.map(post => `
-      <button class="chat-command-item" type="button" data-post-id="${escapeHTML(post.id)}">
+    ? filteredPosts.map((post, index) => `
+      <button class="chat-command-item${index === chatCommandSelection ? " is-selected" : ""}" type="button" data-post-id="${escapeHTML(post.id)}">
         <span class="chat-command-icon">↗</span>
         <span><strong>${escapeHTML(post.title)}</strong><small>${escapeHTML(post.category.toUpperCase())} / POST</small></span>
       </button>
     `).join("")
     : `<p class="chat-command-empty">No posts found.</p>`;
   chatCommandMenu.hidden = false;
+}
+
+function getFilteredChatPosts(query) {
+  return chatPosts.filter(post => post.title.toLowerCase().includes(query.toLowerCase()));
 }
 
 async function updateChatCommandMenu() {
@@ -153,18 +160,36 @@ async function updateChatCommandMenu() {
     chatCommandMenu.innerHTML = `<p class="chat-command-empty">Could not load posts: ${escapeHTML(chatPostsError)}</p>`;
     return;
   }
+  chatCommandSelection = 0;
   showChatCommandMenu(currentMatch[1]);
 }
 
 teamChatInput.addEventListener("input", updateChatCommandMenu);
 teamChatInput.addEventListener("keydown", event => {
   if (event.key === "Escape") hideChatCommandMenu();
+  if (chatCommandMenu.hidden) return;
+
+  const beforeCursor = getChatInputBeforeCaret();
+  const match = beforeCursor.match(/(?:^|\s)\/([^\s]*)$/);
+  if (!match) return;
+  const filteredPosts = getFilteredChatPosts(match[1]);
+  if (!filteredPosts.length) return;
+
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    event.preventDefault();
+    const direction = event.key === "ArrowDown" ? 1 : -1;
+    chatCommandSelection = (chatCommandSelection + direction + filteredPosts.length) % filteredPosts.length;
+    showChatCommandMenu(match[1]);
+    return;
+  }
+
+  if (event.key === "Enter") {
+    event.preventDefault();
+    insertChatPostLink(filteredPosts[chatCommandSelection]);
+  }
 });
 
-chatCommandMenu.addEventListener("click", event => {
-  const button = event.target.closest(".chat-command-item");
-  if (!button) return;
-  const post = chatPosts.find(item => String(item.id) === button.dataset.postId);
+function insertChatPostLink(post) {
   if (!post) return;
 
   const beforeCursor = getChatInputBeforeCaret();
@@ -196,6 +221,12 @@ chatCommandMenu.addEventListener("click", event => {
   selection.addRange(caret);
   hideChatCommandMenu();
   teamChatInput.focus();
+}
+
+chatCommandMenu.addEventListener("click", event => {
+  const button = event.target.closest(".chat-command-item");
+  if (!button) return;
+  insertChatPostLink(chatPosts.find(item => String(item.id) === button.dataset.postId));
 });
 
 teamChatMessages.addEventListener("click", async event => {

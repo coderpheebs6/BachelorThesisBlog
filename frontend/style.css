@@ -584,6 +584,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .chat-command-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 12px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); text-align: left; cursor: pointer; font: inherit; }
 .chat-command-item:last-child { border-bottom: 0; }
 .chat-command-item:hover { background: var(--surface-hover); }
+.chat-command-item.is-selected { background: var(--surface-hover); box-shadow: inset 3px 0 0 var(--lime); }
 .chat-command-item strong, .chat-command-item small { display: block; }
 .chat-command-item strong { font-size: .85rem; }
 .chat-command-item small { margin-top: 3px; color: var(--muted); font: .6rem var(--mono); letter-spacing: .06em; }
