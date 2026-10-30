@@ -9,8 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="data.js?v=12" defer></script>
-  <script src="team.js?v=34" defer></script>
+  <script src="data.js?v=13" defer></script>
+  <script src="team.js?v=35" defer></script>
 </head>
 <body class="team-page">
   <nav class="navbar">
@@ -116,6 +116,16 @@
         <textarea id="conclusion" rows="3" maxlength="240" placeholder="What should the reader remember?"></textarea>
         <label for="ai-usage">AI USE <span class="optional">(optional)</span></label>
         <textarea id="ai-usage" rows="4" maxlength="500" placeholder="How did you use AI in this part of the process?"></textarea>
+        <fieldset class="media-fieldset">
+          <legend>ADD A LINK, PHOTO OR VIDEO <span class="optional">(optional)</span></legend>
+          <div class="media-type-picker" role="group" aria-label="Attachment type">
+            <button type="button" class="media-type-option is-selected" data-media-type="link" aria-pressed="true">LINK</button>
+            <button type="button" class="media-type-option" data-media-type="image" aria-pressed="false">PHOTO</button>
+            <button type="button" class="media-type-option" data-media-type="video" aria-pressed="false">VIDEO</button>
+          </div>
+          <input id="attachment-url" type="url" maxlength="1000" placeholder="https://...">
+          <p class="form-hint">Paste a public URL. Photos and direct video files are shown in the published note.</p>
+        </fieldset>
         <div class="note-form-actions">
           <button id="save-draft-button" type="button" class="submit-button secondary-button">SAVE DRAFT <span>↘</span></button>
           <button id="note-submit-button" type="submit" class="submit-button">PUBLISH NOTE <span>↗</span></button>
@@ -160,6 +170,7 @@
       <h2 id="preview-title"></h2>
       <p id="preview-date" class="muted"></p>
       <div id="preview-body" class="preview-body"></div>
+      <div id="preview-media" class="preview-section preview-media" hidden></div>
       <div id="preview-takeaway" class="preview-section" hidden></div>
       <div id="preview-ai" class="preview-section preview-ai" hidden></div>
     </article>

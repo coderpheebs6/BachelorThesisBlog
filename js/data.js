@@ -21,7 +21,7 @@ window.fieldnotesData = {
 
     const { data, error } = await supabaseClient
       .from("posts")
-      .select("id, category, title, body, conclusion, ai_usage, author_id, date")
+      .select("id, category, title, body, conclusion, ai_usage, attachment_type, attachment_url, author_id, date")
       .order("date", { ascending: false });
 
     if (error) throw error;
@@ -231,7 +231,7 @@ window.fieldnotesData = {
 
     const { data, error } = await supabaseClient
       .from("team_drafts")
-      .select("id, category, title, body, conclusion, ai_usage, author_id, updated_at")
+      .select("id, category, title, body, conclusion, ai_usage, attachment_type, attachment_url, author_id, updated_at")
       .eq("author_id", session.user.id)
       .order("updated_at", { ascending: false });
 
@@ -253,6 +253,8 @@ window.fieldnotesData = {
       body: draft.body,
       conclusion: draft.conclusion,
       ai_usage: draft.ai_usage,
+      attachment_type: draft.attachment_type,
+      attachment_url: draft.attachment_url,
       author_id: session.user.id,
       updated_at: new Date().toISOString()
     };

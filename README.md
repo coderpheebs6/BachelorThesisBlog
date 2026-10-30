@@ -73,7 +73,9 @@ een post geen naam of foto meer te kiezen:
 alter table public.posts
   add column if not exists author_id uuid references auth.users(id),
   add column if not exists conclusion text,
-  add column if not exists ai_usage text;
+  add column if not exists ai_usage text,
+  add column if not exists attachment_type text,
+  add column if not exists attachment_url text;
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -218,6 +220,8 @@ create table if not exists public.team_drafts (
   body text not null default '',
   conclusion text,
   ai_usage text,
+  attachment_type text,
+  attachment_url text,
   updated_at timestamptz not null default now()
 );
 
@@ -244,4 +248,12 @@ alter table public.team_drafts
 alter table public.team_drafts
   alter column category type text[] using array[category],
   alter column category set default array['ux'];
+
+-- Run this when enabling links, photos and videos on existing posts and drafts:
+alter table public.posts
+  add column if not exists attachment_type text,
+  add column if not exists attachment_url text;
+alter table public.team_drafts
+  add column if not exists attachment_type text,
+  add column if not exists attachment_url text;
 ```

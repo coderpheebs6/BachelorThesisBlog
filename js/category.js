@@ -27,6 +27,27 @@ function categoryLabels(values) {
   return values.map(categoryLabel).join(" · ");
 }
 
+function safeAttachmentUrl(value) {
+  try {
+    const url = new URL(value);
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+  } catch {
+    return "";
+  }
+}
+
+function attachmentMarkup(post) {
+  const url = safeAttachmentUrl(post.attachment_url);
+  if (!url) return "";
+  if (post.attachment_type === "image") {
+    return `<figure class="post-attachment"><img src="${escapeHTML(url)}" alt="Attached process image" loading="lazy"></figure>`;
+  }
+  if (post.attachment_type === "video") {
+    return `<figure class="post-attachment"><video controls preload="metadata" src="${escapeHTML(url)}"></video></figure>`;
+  }
+  return `<p class="post-attachment"><a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">OPEN ATTACHED LINK ↗</a></p>`;
+}
+
 function authorMarkup(post) {
   const name = post.author_name || "Devine thesis team";
   const initials = name.split(/\s+/).map(part => part[0]).join("").slice(0, 2).toUpperCase();
@@ -116,6 +137,7 @@ async function renderArticle() {
     <div class="article-author">${authorMarkup(post)}</div>
     <h1>${escapeHTML(post.title)}</h1>
     <div class="article-body">${escapeHTML(post.body)}</div>
+    ${attachmentMarkup(post)}
     ${post.conclusion ? `<aside class="article-takeaway"><span class="takeaway-icon" aria-hidden="true"></span><div class="takeaway-copy"><span class="eyebrow">KEY TAKEAWAY</span><p>${escapeHTML(post.conclusion)}</p></div></aside>` : ""}
     ${post.ai_usage ? `<aside class="article-ai"><span class="ai-icon" aria-hidden="true">✦</span><div><span class="eyebrow">AI USE</span><p>${escapeHTML(post.ai_usage)}</p></div></aside>` : ""}
   `;

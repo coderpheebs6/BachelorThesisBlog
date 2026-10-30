@@ -29,6 +29,7 @@ const noteFormLabel = document.getElementById("note-form-label");
 const noteSubmitButton = document.getElementById("note-submit-button");
 const categoryPicker = document.getElementById("category");
 const categoryMessage = document.getElementById("category-message");
+const mediaTypePicker = document.querySelector(".media-type-picker");
 const cancelEditButton = document.getElementById("cancel-edit-button");
 const teamChatMessages = document.getElementById("team-chat-messages");
 const teamChatForm = document.getElementById("team-chat-form");
@@ -348,6 +349,9 @@ function openPreview(post) {
   previewTitle.textContent = post.title;
   previewDate.textContent = formatDate(post.date);
   previewBody.textContent = post.body;
+  const previewMedia = document.getElementById("preview-media");
+  previewMedia.innerHTML = renderAttachment(post);
+  previewMedia.hidden = !post.attachment_url;
   previewTakeaway.hidden = !post.conclusion;
   previewTakeaway.innerHTML = post.conclusion
     ? `<span class="takeaway-icon" aria-hidden="true"></span><div><strong>KEY TAKEAWAY</strong><p>${escapeHTML(post.conclusion)}</p></div>`
@@ -392,13 +396,37 @@ function escapeHTML(value) {
   }[char]));
 }
 
+function safeAttachmentUrl(value) {
+  try {
+    const url = new URL(value);
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+  } catch {
+    return "";
+  }
+}
+
+function renderAttachment(post) {
+  const url = safeAttachmentUrl(post.attachment_url);
+  if (!url) return "";
+  if (post.attachment_type === "image") {
+    return `<figure class="post-attachment"><img src="${escapeHTML(url)}" alt="Attached process image" loading="lazy"></figure>`;
+  }
+  if (post.attachment_type === "video") {
+    return `<figure class="post-attachment"><video controls preload="metadata" src="${escapeHTML(url)}"></video></figure>`;
+  }
+  return `<p class="post-attachment"><a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">OPEN ATTACHED LINK ↗</a></p>`;
+}
+
 function getNoteFormValues() {
+  const attachmentUrl = document.getElementById("attachment-url").value.trim();
   return {
     category: [...categoryPicker.querySelectorAll(".category-option.is-selected")].map(button => button.dataset.category),
     title: document.getElementById("title").value.trim(),
     body: document.getElementById("body").value.trim(),
     conclusion: document.getElementById("conclusion").value.trim() || null,
-    ai_usage: document.getElementById("ai-usage").value.trim() || null
+    ai_usage: document.getElementById("ai-usage").value.trim() || null,
+    attachment_type: attachmentUrl ? mediaTypePicker.querySelector(".is-selected").dataset.mediaType : null,
+    attachment_url: attachmentUrl || null
   };
 }
 
@@ -413,6 +441,12 @@ function fillNoteForm(note) {
   document.getElementById("body").value = note.body || "";
   document.getElementById("conclusion").value = note.conclusion || "";
   document.getElementById("ai-usage").value = note.ai_usage || "";
+  document.getElementById("attachment-url").value = note.attachment_url || "";
+  mediaTypePicker.querySelectorAll(".media-type-option").forEach(button => {
+    const selected = (note.attachment_type || "link") === button.dataset.mediaType;
+    button.classList.toggle("is-selected", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
 }
 
 function resetCategoryPicker() {
@@ -422,6 +456,14 @@ function resetCategoryPicker() {
     button.setAttribute("aria-pressed", String(selected));
   });
   categoryMessage.textContent = "";
+}
+
+function resetMediaPicker() {
+  mediaTypePicker.querySelectorAll(".media-type-option").forEach(button => {
+    const selected = button.dataset.mediaType === "link";
+    button.classList.toggle("is-selected", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
 }
 
 async function loadDraft() {
@@ -670,6 +712,7 @@ teamForm.addEventListener("submit", async event => {
     }
     teamForm.reset();
     resetCategoryPicker();
+    resetMediaPicker();
     await renderTeamPosts();
     await renderTeamDrafts();
   } catch (error) {
@@ -691,9 +734,19 @@ categoryPicker.addEventListener("click", event => {
   categoryMessage.textContent = "";
 });
 
+mediaTypePicker.addEventListener("click", event => {
+  const button = event.target.closest(".media-type-option");
+  if (!button) return;
+  mediaTypePicker.querySelectorAll(".media-type-option").forEach(option => {
+    const selected = option === button;
+    option.classList.toggle("is-selected", selected);
+    option.setAttribute("aria-pressed", String(selected));
+  });
+});
+
 saveDraftButton.addEventListener("click", async () => {
   const draft = getNoteFormValues();
-  if (!draft.title && !draft.body && !draft.conclusion && !draft.ai_usage) {
+  if (!draft.title && !draft.body && !draft.conclusion && !draft.ai_usage && !draft.attachment_url) {
     showMessage(teamMessage, "Add some content before saving a draft.");
     return;
   }
@@ -703,6 +756,7 @@ saveDraftButton.addEventListener("click", async () => {
     await window.fieldnotesData.saveDraft({ ...draft, id: editingDraftId });
     teamForm.reset();
     resetCategoryPicker();
+    resetMediaPicker();
     editingPostId = null;
     editingDraftId = null;
     noteFormLabel.textContent = "01 / WRITE THE NOTE";
@@ -800,6 +854,7 @@ cancelEditButton.addEventListener("click", () => {
   noteFormLabel.textContent = "01 / WRITE THE NOTE";
   noteSubmitButton.innerHTML = "PUBLISH NOTE <span>↗</span>";
   cancelEditButton.hidden = true;
+  resetMediaPicker();
   showMessage(teamMessage, "");
 });
 
