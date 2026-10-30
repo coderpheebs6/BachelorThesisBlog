@@ -18,6 +18,19 @@ function publicProfileMarkup(profile) {
     : publicEscapeHTML(initials);
 }
 
+function publicRenderChatText(message) {
+  const escaped = publicEscapeHTML(message);
+  return escaped.replace(/\[\[post:([^|\]]+)\|([^\]]+)\]\]/g, (_, id, encodedTitle) => {
+    let title = encodedTitle;
+    try {
+      title = decodeURIComponent(encodedTitle);
+    } catch {
+      title = encodedTitle;
+    }
+    return `<a class="chat-post-link" href="article.html?id=${encodeURIComponent(id)}">${publicEscapeHTML(title)}</a>`;
+  });
+}
+
 function createPublicChatDrawer() {
   const drawer = document.createElement("aside");
   drawer.className = "public-chat-drawer";
@@ -51,6 +64,7 @@ async function initPublicNav() {
   publicNavActions.insertAdjacentHTML("beforeend", `
     <button class="public-chat-button" type="button" aria-label="Open team chat">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 5.5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-8l-5 3v-3.2a2 2 0 0 1-1-1.8v-7a2 2 0 0 1 2-2Z"></path></svg>
+      <span class="chat-unread-badge" aria-hidden="true"></span>
     </button>
     <a class="public-profile-button" href="team.html" aria-label="Open team profile">${publicProfileMarkup(profile)}</a>
   `);
@@ -61,14 +75,30 @@ async function initPublicNav() {
   const form = drawer.querySelector(".public-chat-form");
   const input = drawer.querySelector(".public-chat-input");
   const formMessage = drawer.querySelector(".form-message");
+  const chatButton = publicNavActions.querySelector(".public-chat-button");
+  const unreadBadge = chatButton.querySelector(".chat-unread-badge");
+  let latestSeenMessage = null;
+  let hasLoadedMessages = false;
+
+  function updateUnread(messages, markAsRead = false) {
+    const latestMessage = messages[messages.length - 1];
+    if (!hasLoadedMessages && latestMessage) latestSeenMessage = latestMessage.created_at;
+    if (markAsRead && latestMessage) latestSeenMessage = latestMessage.created_at;
+    const hasUnread = hasLoadedMessages && !drawer.classList.contains("is-open")
+      && latestMessage && latestMessage.created_at > latestSeenMessage;
+    unreadBadge.classList.toggle("is-visible", Boolean(hasUnread));
+    chatButton.setAttribute("aria-label", hasUnread ? "Open team chat, unread messages" : "Open team chat");
+    hasLoadedMessages = true;
+  }
 
   async function renderMessages() {
     const messages = await window.fieldnotesData.getChatMessages();
+    updateUnread(messages);
     messagesElement.innerHTML = messages.map(message => `
       <article class="public-chat-message">
         <strong>${publicEscapeHTML(message.author_name)}</strong>
         <time>${new Date(message.created_at).toLocaleString("nl-BE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time>
-        <p>${publicEscapeHTML(message.message)}</p>
+        <p>${publicRenderChatText(message.message)}</p>
       </article>
     `).join("") || `<p class="muted">No messages yet.</p>`;
   }
@@ -78,10 +108,18 @@ async function initPublicNav() {
     overlay.classList.remove("is-open");
   }
 
-  publicNavActions.querySelector(".public-chat-button").addEventListener("click", async () => {
+  chatButton.addEventListener("click", async () => {
     drawer.classList.add("is-open");
     overlay.classList.add("is-open");
-    await renderMessages();
+    const messages = await window.fieldnotesData.getChatMessages();
+    updateUnread(messages, true);
+    messagesElement.innerHTML = messages.map(message => `
+      <article class="public-chat-message">
+        <strong>${publicEscapeHTML(message.author_name)}</strong>
+        <time>${new Date(message.created_at).toLocaleString("nl-BE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time>
+        <p>${publicRenderChatText(message.message)}</p>
+      </article>
+    `).join("") || `<p class="muted">No messages yet.</p>`;
     input.focus();
   });
   closeButton.addEventListener("click", close);

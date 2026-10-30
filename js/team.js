@@ -44,6 +44,8 @@ let pendingDeleteId = null;
 let editingPostId = null;
 let editingDraftId = null;
 let unsubscribeChat = null;
+let latestSeenChatMessage = null;
+let hasLoadedChatMessages = false;
 const ownPostsById = new Map();
 const ownDraftsById = new Map();
 let chatPosts = [];
@@ -283,7 +285,16 @@ teamChatMessages.addEventListener("click", async event => {
 
 async function renderChatMessagesFromDatabase() {
   try {
-    await renderChatMessages(await window.fieldnotesData.getChatMessages());
+    const messages = await window.fieldnotesData.getChatMessages();
+    const latestMessage = messages[messages.length - 1];
+    const isChatOpen = teamChatSection.classList.contains("is-open");
+    if (!hasLoadedChatMessages && latestMessage) latestSeenChatMessage = latestMessage.created_at;
+    if (isChatOpen && latestMessage) latestSeenChatMessage = latestMessage.created_at;
+    const hasUnread = hasLoadedChatMessages && !isChatOpen && latestMessage
+      && latestMessage.created_at > latestSeenChatMessage;
+    chatToggleButton.querySelector(".chat-unread-badge")?.classList.toggle("is-visible", Boolean(hasUnread));
+    hasLoadedChatMessages = true;
+    await renderChatMessages(messages);
   } catch (error) {
     teamChatMessages.innerHTML = `<p class="form-message">Could not load team messages: ${escapeHTML(error.message)}</p>`;
     console.error("Loading team chat failed", error);
@@ -602,6 +613,8 @@ function openChat() {
     chatOverlay.classList.add("is-open");
   });
   chatToggleButton.setAttribute("aria-expanded", "true");
+  chatToggleButton.querySelector(".chat-unread-badge")?.classList.remove("is-visible");
+  renderChatMessagesFromDatabase();
   document.body.classList.add("chat-is-open");
   teamChatInput.focus();
 }
