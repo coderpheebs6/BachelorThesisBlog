@@ -134,6 +134,107 @@ window.fieldnotesData = {
     const { error } = await supabaseClient.from("posts").delete().eq("id", id);
     if (error) throw error;
   },
+  async getChatMessages() {
+    if (!supabaseClient) return [];
+
+    const { data, error } = await supabaseClient
+      .from("team_messages")
+      .select("id, message, author_id, created_at")
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+
+    const authorIds = [...new Set((data || []).map(item => item.author_id).filter(Boolean))];
+    if (!authorIds.length) return data || [];
+
+    const { data: profiles, error: profileError } = await supabaseClient
+      .from("profiles")
+      .select("id, display_name, avatar_url")
+      .in("id", authorIds);
+
+    if (profileError) throw profileError;
+    const profileById = new Map((profiles || []).map(profile => [profile.id, profile]));
+    return (data || []).map(item => ({
+      ...item,
+      author_name: profileById.get(item.author_id)?.display_name || "PKL Studio team",
+      author_avatar: profileById.get(item.author_id)?.avatar_url || null
+    }));
+  },
+  async addChatMessage(message) {
+    if (!supabaseClient) throw new Error("Supabase is not configured.");
+
+    const session = await this.getSession();
+    if (!session?.user?.id) throw new Error("You must be logged in.");
+
+    const { error } = await supabaseClient
+      .from("team_messages")
+      .insert({ message, author_id: session.user.id });
+
+    if (error) throw error;
+  },
+  async updateChatMessage(id, message) {
+    if (!supabaseClient) throw new Error("Supabase is not configured.");
+    const session = await this.getSession();
+    if (!session?.user?.id) throw new Error("You must be logged in.");
+
+    const { error } = await supabaseClient
+      .from("team_messages")
+      .update({ message })
+      .eq("id", id)
+      .eq("author_id", session.user.id);
+
+    if (error) throw error;
+  },
+  async deleteChatMessage(id) {
+    if (!supabaseClient) throw new Error("Supabase is not configured.");
+    const session = await this.getSession();
+    if (!session?.user?.id) throw new Error("You must be logged in.");
+
+    const { error } = await supabaseClient
+      .from("team_messages")
+      .delete()
+      .eq("id", id)
+      .eq("author_id", session.user.id);
+
+    if (error) throw error;
+  },
+  async getDraft() {
+    if (!supabaseClient) return null;
+    const session = await this.getSession();
+    if (!session?.user?.id) return null;
+
+    const { data, error } = await supabaseClient
+      .from("team_drafts")
+      .select("category, title, body, conclusion, ai_usage, updated_at")
+      .eq("author_id", session.user.id)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  },
+  async saveDraft(draft) {
+    if (!supabaseClient) throw new Error("Supabase is not configured.");
+    const session = await this.getSession();
+    if (!session?.user?.id) throw new Error("You must be logged in.");
+
+    const { error } = await supabaseClient
+      .from("team_drafts")
+      .upsert({ ...draft, author_id: session.user.id }, { onConflict: "author_id" });
+
+    if (error) throw error;
+  },
+  async deleteDraft() {
+    if (!supabaseClient) return;
+    const session = await this.getSession();
+    if (!session?.user?.id) return;
+
+    const { error } = await supabaseClient
+      .from("team_drafts")
+      .delete()
+      .eq("author_id", session.user.id);
+
+    if (error) throw error;
+  },
   async signIn(email, password) {
     if (!supabaseClient) throw new Error("Supabase is not configured.");
     return supabaseClient.auth.signInWithPassword({ email, password });

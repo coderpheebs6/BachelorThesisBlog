@@ -9,8 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="data.js?v=3" defer></script>
-  <script src="team.js?v=3" defer></script>
+  <script src="data.js?v=6" defer></script>
+  <script src="team.js?v=9" defer></script>
 </head>
 <body class="team-page">
   <nav class="navbar">
@@ -39,7 +39,10 @@
           <p class="eyebrow">PRIVATE / DEVINE TEAM</p>
           <h1>Add a thesis<br><span>update.</span></h1>
         </div>
-        <button id="logout-button" class="text-button" type="button">LOG OUT</button>
+        <div class="team-heading-actions">
+          <button id="chat-toggle-button" class="chat-bubble-button" type="button" aria-expanded="false" aria-controls="team-chat-section">OPEN TEAM CHAT <span>↗</span></button>
+          <button id="logout-button" class="text-button" type="button">LOG OUT</button>
+        </div>
       </div>
       <form id="profile-form" class="profile-form">
         <div>
@@ -65,7 +68,34 @@
         </div>
         <button id="edit-profile-button" class="edit-profile-button" type="button" aria-label="Edit profile">✎</button>
       </section>
+      <section id="team-chat-section" class="team-chat-section" aria-labelledby="team-chat-title" hidden>
+        <div class="team-section-heading">
+          <div>
+            <p class="eyebrow">TEAM SPACE</p>
+            <h2 id="team-chat-title">Talk through<br><span>the process.</span></h2>
+          </div>
+          <button id="close-chat-button" class="chat-close-button" type="button" aria-label="Close team chat">CLOSE <span>×</span></button>
+        </div>
+        <div id="team-chat-messages" class="team-chat-messages" aria-live="polite">
+          <p class="muted">Loading team messages...</p>
+        </div>
+        <form id="team-chat-form" class="team-chat-form">
+          <label for="team-chat-input">MESSAGE THE TEAM</label>
+          <div class="team-chat-input-row">
+            <textarea id="team-chat-input" rows="2" maxlength="1000" required placeholder="Share an idea, question or update..."></textarea>
+            <button type="submit" class="submit-button">SEND <span>↗</span></button>
+          </div>
+          <p id="chat-message" class="form-message" aria-live="polite"></p>
+        </form>
+      </section>
       <form id="team-form" class="team-form">
+        <div class="form-heading">
+          <div>
+            <p class="eyebrow">NEW THESIS UPDATE</p>
+            <h2>Make a blog<br><span>post.</span></h2>
+          </div>
+          <button id="close-post-button" class="text-button" type="button" hidden>CLOSE</button>
+        </div>
         <label for="category">CATEGORY</label>
         <select id="category" required>
           <option value="ux">UX</option>
@@ -82,6 +112,7 @@
         <label for="ai-usage">AI USE <span class="optional">(optional)</span></label>
         <textarea id="ai-usage" rows="4" maxlength="500" placeholder="How did you use AI in this part of the process?"></textarea>
         <button id="note-submit-button" type="submit" class="submit-button">PUBLISH NOTE <span>↗</span></button>
+        <button id="save-draft-button" type="button" class="text-button save-draft-button">SAVE DRAFT</button>
         <button id="cancel-edit-button" type="button" class="text-button cancel-edit-button" hidden>CANCEL EDIT</button>
         <p id="team-message" class="form-message" aria-live="polite"></p>
       </form>
@@ -91,6 +122,7 @@
       </div>
     </section>
   </main>
+  <div id="chat-overlay" class="chat-overlay" hidden></div>
   <div id="delete-modal" class="delete-modal" aria-hidden="true">
     <div class="delete-modal-card" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
       <p class="eyebrow">REMOVE NOTE</p>

@@ -27,9 +27,104 @@ const previewAi = document.getElementById("preview-ai");
 const noteFormLabel = document.getElementById("note-form-label");
 const noteSubmitButton = document.getElementById("note-submit-button");
 const cancelEditButton = document.getElementById("cancel-edit-button");
+const teamChatMessages = document.getElementById("team-chat-messages");
+const teamChatForm = document.getElementById("team-chat-form");
+const teamChatInput = document.getElementById("team-chat-input");
+const chatMessage = document.getElementById("chat-message");
+const saveDraftButton = document.getElementById("save-draft-button");
+const chatToggleButton = document.getElementById("chat-toggle-button");
+const teamChatSection = document.getElementById("team-chat-section");
+const closeChatButton = document.getElementById("close-chat-button");
+const chatOverlay = document.getElementById("chat-overlay");
 let pendingDeleteId = null;
 let editingPostId = null;
 const ownPostsById = new Map();
+
+async function renderChatMessages(messages) {
+  const session = await window.fieldnotesData.getSession();
+  const currentUserId = session?.user?.id;
+  teamChatMessages.innerHTML = messages.length
+    ? messages.map(item => `
+      <article class="team-chat-message${item.author_id === currentUserId ? " is-own-message" : ""}">
+        <div class="team-chat-message-meta">
+          <div class="team-chat-author">
+            <span class="chat-avatar">${item.author_avatar && /^https:\/\//i.test(item.author_avatar)
+              ? `<img src="${escapeHTML(item.author_avatar)}" alt="">`
+              : escapeHTML(item.author_name.split(/\s+/).map(part => part[0]).join("").slice(0, 2).toUpperCase())}</span>
+            <strong>${escapeHTML(item.author_name)}</strong>
+          </div>
+          <time datetime="${escapeHTML(item.created_at)}">${formatChatTime(item.created_at)}</time>
+        </div>
+        <p class="team-chat-message-body">${escapeHTML(item.message)}</p>
+        ${item.author_id === currentUserId ? `
+          <div class="team-chat-message-actions">
+            <button class="chat-edit-button" data-id="${escapeHTML(item.id)}" type="button">EDIT</button>
+            <button class="chat-delete-button" data-id="${escapeHTML(item.id)}" type="button">DELETE</button>
+          </div>
+        ` : ""}
+      </article>
+    `).join("")
+    : `<p class="muted">No messages yet. Start the conversation.</p>`;
+  teamChatMessages.scrollTop = teamChatMessages.scrollHeight;
+}
+
+teamChatMessages.addEventListener("click", async event => {
+  const editButton = event.target.closest(".chat-edit-button");
+  const deleteButton = event.target.closest(".chat-delete-button");
+  const messageCard = event.target.closest(".team-chat-message");
+  if (!messageCard) return;
+
+  if (editButton) {
+    const body = messageCard.querySelector(".team-chat-message-body");
+    const currentMessage = body.textContent;
+    const editor = document.createElement("textarea");
+    editor.className = "team-chat-edit-input";
+    editor.maxLength = 1000;
+    editor.value = currentMessage;
+    const actions = document.createElement("div");
+    actions.className = "team-chat-edit-actions";
+    actions.innerHTML = `<button class="chat-save-button" type="button">SAVE</button><button class="chat-cancel-button" type="button">CANCEL</button>`;
+    body.replaceWith(editor);
+    messageCard.querySelector(".team-chat-message-actions").replaceWith(actions);
+    editor.focus();
+    actions.addEventListener("click", async actionEvent => {
+      if (actionEvent.target.closest(".chat-cancel-button")) {
+        await renderChatMessagesFromDatabase();
+        return;
+      }
+      if (!actionEvent.target.closest(".chat-save-button")) return;
+      const message = editor.value.trim();
+      if (!message) return;
+      try {
+        await window.fieldnotesData.updateChatMessage(editButton.dataset.id, message);
+        await renderChatMessagesFromDatabase();
+      } catch (error) {
+        showMessage(chatMessage, `Could not edit message: ${error.message}`);
+        console.error("Editing team chat message failed", error);
+      }
+    }, { once: true });
+    return;
+  }
+
+  if (deleteButton && window.confirm("Delete this message?")) {
+    try {
+      await window.fieldnotesData.deleteChatMessage(deleteButton.dataset.id);
+      await renderChatMessagesFromDatabase();
+    } catch (error) {
+      showMessage(chatMessage, `Could not delete message: ${error.message}`);
+      console.error("Deleting team chat message failed", error);
+    }
+  }
+});
+
+async function renderChatMessagesFromDatabase() {
+  try {
+    await renderChatMessages(await window.fieldnotesData.getChatMessages());
+  } catch (error) {
+    teamChatMessages.innerHTML = `<p class="form-message">Could not load team messages: ${escapeHTML(error.message)}</p>`;
+    console.error("Loading team chat failed", error);
+  }
+}
 
 function closeDeleteModal() {
   pendingDeleteId = null;
@@ -80,6 +175,15 @@ function formatDate(timestamp) {
   });
 }
 
+function formatChatTime(timestamp) {
+  return new Date(timestamp).toLocaleString("nl-BE", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
 function escapeHTML(value) {
   return String(value).replace(/[&<>"']/g, char => ({
     "&": "&amp;",
@@ -88,6 +192,36 @@ function escapeHTML(value) {
     '"': "&quot;",
     "'": "&#039;"
   }[char]));
+}
+
+function getNoteFormValues() {
+  return {
+    category: document.getElementById("category").value,
+    title: document.getElementById("title").value.trim(),
+    body: document.getElementById("body").value.trim(),
+    conclusion: document.getElementById("conclusion").value.trim() || null,
+    ai_usage: document.getElementById("ai-usage").value.trim() || null
+  };
+}
+
+function fillNoteForm(note) {
+  document.getElementById("category").value = note.category || "ux";
+  document.getElementById("title").value = note.title || "";
+  document.getElementById("body").value = note.body || "";
+  document.getElementById("conclusion").value = note.conclusion || "";
+  document.getElementById("ai-usage").value = note.ai_usage || "";
+}
+
+async function loadDraft() {
+  try {
+    const draft = await window.fieldnotesData.getDraft();
+    if (!draft) return;
+    fillNoteForm(draft);
+    showMessage(teamMessage, "Draft restored.");
+  } catch (error) {
+    showMessage(teamMessage, `Could not load your draft: ${error.message}`);
+    console.error("Loading draft failed", error);
+  }
 }
 
 function renderProfile(profile) {
@@ -150,6 +284,8 @@ async function updateAuthView() {
     }
     renderProfile(profile);
     renderTeamPosts();
+    renderChatMessagesFromDatabase();
+    loadDraft();
   }
 }
 
@@ -212,18 +348,56 @@ editProfileButton.addEventListener("click", () => {
   document.getElementById("profile-name").focus();
 });
 
+function openChat() {
+  teamChatSection.hidden = false;
+  chatOverlay.hidden = false;
+  requestAnimationFrame(() => {
+    teamChatSection.classList.add("is-open");
+    chatOverlay.classList.add("is-open");
+  });
+  chatToggleButton.setAttribute("aria-expanded", "true");
+  document.body.classList.add("chat-is-open");
+  teamChatInput.focus();
+}
+
+function closeChat() {
+  teamChatSection.classList.remove("is-open");
+  chatOverlay.classList.remove("is-open");
+  chatToggleButton.setAttribute("aria-expanded", "false");
+  document.body.classList.remove("chat-is-open");
+  window.setTimeout(() => {
+    if (!teamChatSection.classList.contains("is-open")) teamChatSection.hidden = true;
+    if (!chatOverlay.classList.contains("is-open")) chatOverlay.hidden = true;
+  }, 260);
+}
+
+chatToggleButton.addEventListener("click", openChat);
+closeChatButton.addEventListener("click", closeChat);
+chatOverlay.addEventListener("click", closeChat);
+
+teamChatForm.addEventListener("submit", async event => {
+  event.preventDefault();
+  const message = teamChatInput.value.trim();
+  if (!message) return;
+
+  showMessage(chatMessage, "Sending...");
+  try {
+    await window.fieldnotesData.addChatMessage(message);
+    teamChatInput.value = "";
+    showMessage(chatMessage, "");
+    await renderChatMessagesFromDatabase();
+  } catch (error) {
+    showMessage(chatMessage, `Could not send message: ${error.message}`);
+    console.error("Sending team chat message failed", error);
+  }
+});
+
 teamForm.addEventListener("submit", async event => {
   event.preventDefault();
   showMessage(teamMessage, editingPostId ? "Saving changes..." : "Publishing...");
 
   try {
-    const note = {
-      category: document.getElementById("category").value,
-      title: document.getElementById("title").value.trim(),
-      body: document.getElementById("body").value.trim(),
-      conclusion: document.getElementById("conclusion").value.trim() || null,
-      ai_usage: document.getElementById("ai-usage").value.trim() || null
-    };
+    const note = getNoteFormValues();
     if (editingPostId) {
       await window.fieldnotesData.updatePost(editingPostId, note);
       editingPostId = null;
@@ -233,6 +407,7 @@ teamForm.addEventListener("submit", async event => {
       showMessage(teamMessage, "Note updated.");
     } else {
       await window.fieldnotesData.addPost({ ...note, date: new Date().toISOString() });
+      await window.fieldnotesData.deleteDraft();
       showMessage(teamMessage, "Note published.");
     }
     teamForm.reset();
@@ -240,6 +415,23 @@ teamForm.addEventListener("submit", async event => {
   } catch (error) {
     showMessage(teamMessage, `Could not save the note: ${error.message}`);
     console.error("Saving note failed", error);
+  }
+});
+
+saveDraftButton.addEventListener("click", async () => {
+  const draft = getNoteFormValues();
+  if (!draft.title && !draft.body && !draft.conclusion && !draft.ai_usage) {
+    showMessage(teamMessage, "Add some content before saving a draft.");
+    return;
+  }
+
+  showMessage(teamMessage, "Saving draft...");
+  try {
+    await window.fieldnotesData.saveDraft(draft);
+    showMessage(teamMessage, "Draft saved.");
+  } catch (error) {
+    showMessage(teamMessage, `Could not save your draft: ${error.message}`);
+    console.error("Saving draft failed", error);
   }
 });
 
@@ -259,11 +451,7 @@ teamPosts.addEventListener("click", async event => {
     }
     try {
       editingPostId = post.id;
-      document.getElementById("category").value = post.category;
-      document.getElementById("title").value = post.title;
-      document.getElementById("body").value = post.body;
-      document.getElementById("conclusion").value = post.conclusion || "";
-      document.getElementById("ai-usage").value = post.ai_usage || "";
+      fillNoteForm(post);
       noteFormLabel.textContent = "01 / EDIT THE NOTE";
       noteSubmitButton.innerHTML = "SAVE CHANGES <span>↗</span>";
       cancelEditButton.hidden = false;
@@ -339,6 +527,7 @@ previewModal.addEventListener("click", event => {
 document.addEventListener("keydown", event => {
   if (event.key === "Escape" && deleteModal.classList.contains("is-open")) closeDeleteModal();
   if (event.key === "Escape" && previewModal.classList.contains("is-open")) closePreview();
+  if (event.key === "Escape" && teamChatSection.classList.contains("is-open")) closeChat();
 });
 
 document.getElementById("logout-button").addEventListener("click", async () => {
