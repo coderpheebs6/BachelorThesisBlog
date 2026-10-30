@@ -36,16 +36,37 @@ function safeAttachmentUrl(value) {
   }
 }
 
-function attachmentMarkup(post) {
-  const url = safeAttachmentUrl(post.attachment_url);
-  if (!url) return "";
-  if (post.attachment_type === "image") {
-    return `<figure class="post-attachment"><img src="${escapeHTML(url)}" alt="Attached process image" loading="lazy"></figure>`;
-  }
-  if (post.attachment_type === "video") {
-    return `<figure class="post-attachment"><video controls preload="metadata" src="${escapeHTML(url)}"></video></figure>`;
-  }
-  return `<p class="post-attachment"><a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">OPEN ATTACHED LINK ↗</a></p>`;
+function attachmentMarkup(post, typeFilter = null) {
+  const attachments = Array.isArray(post.attachments)
+    ? post.attachments
+    : post.attachment_url ? [{ type: post.attachment_type || "link", url: post.attachment_url }] : [];
+  return attachments.filter(attachment => !typeFilter || attachment.type === typeFilter).map(attachment => {
+    const url = safeAttachmentUrl(attachment.url);
+    if (!url) return "";
+    if (attachment.type === "image") return `<figure class="post-attachment"><img src="${escapeHTML(url)}" alt="Attached process image" loading="lazy"></figure>`;
+    if (attachment.type === "video") return `<figure class="post-attachment"><video controls preload="metadata" src="${escapeHTML(url)}"></video></figure>`;
+    return `<p class="post-attachment"><a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">${escapeHTML(attachment.name || "OPEN ATTACHED LINK")} ↗</a></p>`;
+  }).join("");
+}
+
+function linkAttachmentsMarkup(post) {
+  const markup = attachmentMarkup(post, "link");
+  return markup ? `<section class="article-links"><span class="eyebrow">LINKS</span>${markup}</section>` : "";
+}
+
+function mediaAttachmentsMarkup(post) {
+  const attachments = Array.isArray(post.attachments)
+    ? post.attachments
+    : post.attachment_url ? [{ type: post.attachment_type || "link", url: post.attachment_url }] : [];
+  return attachments
+    .filter(attachment => attachment.type === "image" || attachment.type === "video")
+    .map(attachment => {
+      const url = safeAttachmentUrl(attachment.url);
+      if (!url) return "";
+      return attachment.type === "image"
+        ? `<figure class="post-attachment"><img src="${escapeHTML(url)}" alt="Attached process image" loading="lazy"></figure>`
+        : `<figure class="post-attachment"><video controls preload="metadata" src="${escapeHTML(url)}"></video></figure>`;
+    }).join("");
 }
 
 function authorMarkup(post) {
@@ -137,9 +158,10 @@ async function renderArticle() {
     <div class="article-author">${authorMarkup(post)}</div>
     <h1>${escapeHTML(post.title)}</h1>
     <div class="article-body">${escapeHTML(post.body)}</div>
-    ${attachmentMarkup(post)}
+    ${mediaAttachmentsMarkup(post)}
     ${post.conclusion ? `<aside class="article-takeaway"><span class="takeaway-icon" aria-hidden="true"></span><div class="takeaway-copy"><span class="eyebrow">KEY TAKEAWAY</span><p>${escapeHTML(post.conclusion)}</p></div></aside>` : ""}
     ${post.ai_usage ? `<aside class="article-ai"><span class="ai-icon" aria-hidden="true">✦</span><div><span class="eyebrow">AI USE</span><p>${escapeHTML(post.ai_usage)}</p></div></aside>` : ""}
+    ${linkAttachmentsMarkup(post)}
   `;
 
   if (window.gsap && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {

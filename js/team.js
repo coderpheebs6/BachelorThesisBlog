@@ -29,7 +29,11 @@ const noteFormLabel = document.getElementById("note-form-label");
 const noteSubmitButton = document.getElementById("note-submit-button");
 const categoryPicker = document.getElementById("category");
 const categoryMessage = document.getElementById("category-message");
-const mediaTypePicker = document.querySelector(".media-type-picker");
+const attachmentList = document.getElementById("attachment-list");
+const attachmentLinkInput = document.getElementById("attachment-link");
+const attachmentLinkNameInput = document.getElementById("attachment-link-name");
+const attachmentImagesInput = document.getElementById("attachment-images");
+const attachmentVideosInput = document.getElementById("attachment-videos");
 const cancelEditButton = document.getElementById("cancel-edit-button");
 const teamChatMessages = document.getElementById("team-chat-messages");
 const teamChatForm = document.getElementById("team-chat-form");
@@ -54,6 +58,7 @@ let chatPostsLoaded = false;
 let chatPostsLoading = null;
 let chatPostsError = null;
 let chatCommandSelection = 0;
+let editingAttachments = [];
 
 function getChatInputText() {
   return teamChatInput.textContent;
@@ -350,8 +355,8 @@ function openPreview(post) {
   previewDate.textContent = formatDate(post.date);
   previewBody.textContent = post.body;
   const previewMedia = document.getElementById("preview-media");
-  previewMedia.innerHTML = renderAttachment(post);
-  previewMedia.hidden = !post.attachment_url;
+  previewMedia.innerHTML = renderAttachments(post);
+  previewMedia.hidden = !getAttachments(post).length;
   previewTakeaway.hidden = !post.conclusion;
   previewTakeaway.innerHTML = post.conclusion
     ? `<span class="takeaway-icon" aria-hidden="true"></span><div><strong>KEY TAKEAWAY</strong><p>${escapeHTML(post.conclusion)}</p></div>`
@@ -405,32 +410,50 @@ function safeAttachmentUrl(value) {
   }
 }
 
-function renderAttachment(post) {
-  const url = safeAttachmentUrl(post.attachment_url);
-  if (!url) return "";
-  if (post.attachment_type === "image") {
-    return `<figure class="post-attachment"><img src="${escapeHTML(url)}" alt="Attached process image" loading="lazy"></figure>`;
-  }
-  if (post.attachment_type === "video") {
-    return `<figure class="post-attachment"><video controls preload="metadata" src="${escapeHTML(url)}"></video></figure>`;
-  }
-  return `<p class="post-attachment"><a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">OPEN ATTACHED LINK ↗</a></p>`;
+function getAttachments(post) {
+  if (Array.isArray(post.attachments)) return post.attachments;
+  return post.attachment_url ? [{ type: post.attachment_type || "link", url: post.attachment_url }] : [];
+}
+
+function renderAttachments(post) {
+  return getAttachments(post).map(attachment => {
+    const url = safeAttachmentUrl(attachment.url);
+    if (!url) return "";
+    if (attachment.type === "image") {
+      return `<figure class="post-attachment"><img src="${escapeHTML(url)}" alt="Attached process image" loading="lazy"></figure>`;
+    }
+    if (attachment.type === "video") {
+      return `<figure class="post-attachment"><video controls preload="metadata" src="${escapeHTML(url)}"></video></figure>`;
+    }
+    return `<p class="post-attachment"><a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">OPEN ATTACHED LINK ↗</a></p>`;
+  }).join("");
+}
+
+function renderAttachmentList() {
+  attachmentList.innerHTML = editingAttachments.map((attachment, index) => `
+    <div class="attachment-item">
+      <span>${escapeHTML(attachment.name || attachment.url)}</span>
+      <small>${escapeHTML(attachment.type.toUpperCase())}</small>
+      <button class="attachment-remove" type="button" data-attachment-index="${index}" aria-label="Remove attachment">REMOVE</button>
+    </div>
+  `).join("");
 }
 
 function getNoteFormValues() {
-  const attachmentUrl = document.getElementById("attachment-url").value.trim();
   return {
     category: [...categoryPicker.querySelectorAll(".category-option.is-selected")].map(button => button.dataset.category),
     title: document.getElementById("title").value.trim(),
     body: document.getElementById("body").value.trim(),
     conclusion: document.getElementById("conclusion").value.trim() || null,
     ai_usage: document.getElementById("ai-usage").value.trim() || null,
-    attachment_type: attachmentUrl ? mediaTypePicker.querySelector(".is-selected").dataset.mediaType : null,
-    attachment_url: attachmentUrl || null
+    attachments: [...editingAttachments],
+    attachment_type: editingAttachments[0]?.type || null,
+    attachment_url: editingAttachments[0]?.url || null
   };
 }
 
 function fillNoteForm(note) {
+  editingAttachments = getAttachments(note);
   const categories = Array.isArray(note.category) ? note.category : [note.category || "ux"];
   categoryPicker.querySelectorAll(".category-option").forEach(button => {
     const selected = categories.includes(button.dataset.category);
@@ -441,12 +464,11 @@ function fillNoteForm(note) {
   document.getElementById("body").value = note.body || "";
   document.getElementById("conclusion").value = note.conclusion || "";
   document.getElementById("ai-usage").value = note.ai_usage || "";
-  document.getElementById("attachment-url").value = note.attachment_url || "";
-  mediaTypePicker.querySelectorAll(".media-type-option").forEach(button => {
-    const selected = (note.attachment_type || "link") === button.dataset.mediaType;
-    button.classList.toggle("is-selected", selected);
-    button.setAttribute("aria-pressed", String(selected));
-  });
+  attachmentLinkInput.value = "";
+  attachmentLinkNameInput.value = "";
+  attachmentImagesInput.value = "";
+  attachmentVideosInput.value = "";
+  renderAttachmentList();
 }
 
 function resetCategoryPicker() {
@@ -456,14 +478,12 @@ function resetCategoryPicker() {
     button.setAttribute("aria-pressed", String(selected));
   });
   categoryMessage.textContent = "";
-}
-
-function resetMediaPicker() {
-  mediaTypePicker.querySelectorAll(".media-type-option").forEach(button => {
-    const selected = button.dataset.mediaType === "link";
-    button.classList.toggle("is-selected", selected);
-    button.setAttribute("aria-pressed", String(selected));
-  });
+  editingAttachments = [];
+  attachmentLinkNameInput.value = "";
+  attachmentLinkInput.value = "";
+  attachmentImagesInput.value = "";
+  attachmentVideosInput.value = "";
+  renderAttachmentList();
 }
 
 async function loadDraft() {
@@ -698,7 +718,7 @@ teamForm.addEventListener("submit", async event => {
   showMessage(teamMessage, editingPostId ? "Saving changes..." : "Publishing...");
 
   try {
-    const note = getNoteFormValues();
+    const note = await getNoteFormValues();
     if (editingPostId) {
       await window.fieldnotesData.updatePost(editingPostId, note);
       editingPostId = null;
@@ -712,7 +732,6 @@ teamForm.addEventListener("submit", async event => {
     }
     teamForm.reset();
     resetCategoryPicker();
-    resetMediaPicker();
     await renderTeamPosts();
     await renderTeamDrafts();
   } catch (error) {
@@ -734,31 +753,65 @@ categoryPicker.addEventListener("click", event => {
   categoryMessage.textContent = "";
 });
 
-mediaTypePicker.addEventListener("click", event => {
-  const button = event.target.closest(".media-type-option");
-  if (!button) return;
-  mediaTypePicker.querySelectorAll(".media-type-option").forEach(option => {
-    const selected = option === button;
-    option.classList.toggle("is-selected", selected);
-    option.setAttribute("aria-pressed", String(selected));
+function addLinkAttachment() {
+  const url = safeAttachmentUrl(attachmentLinkInput.value.trim());
+  const name = attachmentLinkNameInput.value.trim();
+  if (!name || !url) return false;
+  editingAttachments.push({ type: "link", url, name: name || url });
+  attachmentLinkInput.value = "";
+  attachmentLinkNameInput.value = "";
+  renderAttachmentList();
+  attachmentLinkNameInput.focus();
+  showMessage(teamMessage, "");
+  return true;
+}
+
+[attachmentLinkNameInput, attachmentLinkInput].forEach(input => {
+  input.addEventListener("keydown", event => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    addLinkAttachment();
   });
 });
 
-saveDraftButton.addEventListener("click", async () => {
-  const draft = getNoteFormValues();
-  if (!draft.title && !draft.body && !draft.conclusion && !draft.ai_usage && !draft.attachment_url) {
-    showMessage(teamMessage, "Add some content before saving a draft.");
-    return;
+async function addUploadedAttachments(input, type) {
+  if (!input.files.length) return;
+  try {
+    showMessage(teamMessage, "Uploading media...");
+    const uploads = await window.fieldnotesData.uploadPostMedia(input.files);
+    editingAttachments.push(...uploads.map(upload => ({ ...upload, type })));
+    input.value = "";
+    renderAttachmentList();
+    showMessage(teamMessage, "");
+  } catch (error) {
+    showMessage(teamMessage, `Could not upload media: ${error.message}`);
+    console.error("Uploading post media failed", error);
   }
+}
 
+attachmentImagesInput.addEventListener("change", () => addUploadedAttachments(attachmentImagesInput, "image"));
+attachmentVideosInput.addEventListener("change", () => addUploadedAttachments(attachmentVideosInput, "video"));
+attachmentList.addEventListener("click", event => {
+  const button = event.target.closest(".attachment-remove");
+  if (!button) return;
+  editingAttachments.splice(Number(button.dataset.attachmentIndex), 1);
+  renderAttachmentList();
+});
+
+saveDraftButton.addEventListener("click", async () => {
   showMessage(teamMessage, "Saving draft...");
   try {
+    const draft = getNoteFormValues();
+    if (!draft.title && !draft.body && !draft.conclusion && !draft.ai_usage && !draft.attachments.length) {
+      showMessage(teamMessage, "Add some content before saving a draft.");
+      return;
+    }
     await window.fieldnotesData.saveDraft({ ...draft, id: editingDraftId });
     teamForm.reset();
     resetCategoryPicker();
-    resetMediaPicker();
     editingPostId = null;
     editingDraftId = null;
+    editingAttachments = [];
     noteFormLabel.textContent = "01 / WRITE THE NOTE";
     noteSubmitButton.innerHTML = "PUBLISH NOTE <span>↗</span>";
     cancelEditButton.hidden = true;

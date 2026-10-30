@@ -8,9 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="data.js?v=13" defer></script>
-  <script src="team.js?v=35" defer></script>
-  <link rel="stylesheet" crossorigin href="/BachelorThesisBlog/assets/style-Bl-aIAzT.css">
+  <script src="data.js?v=14" defer></script>
+  <script src="team.js?v=39" defer></script>
+  <link rel="stylesheet" crossorigin href="/BachelorThesisBlog/assets/style-CHvvtTrM.css">
 </head>
 <body class="team-page">
   <nav class="navbar">
@@ -93,13 +93,6 @@
         </form>
       </section>
       <form id="team-form" class="team-form">
-        <div class="form-heading">
-          <div>
-            <p class="eyebrow">NEW THESIS UPDATE</p>
-            <h2>Document an<br><span>experiment.</span></h2>
-          </div>
-          <button id="close-post-button" class="text-button" type="button" hidden>CLOSE</button>
-        </div>
         <span class="form-section-label">THESIS PILLARS <span class="optional">(choose one or more)</span></span>
         <div id="category" class="category-picker" role="group" aria-label="Thesis pillars">
           <button type="button" class="category-option is-selected" data-category="ux" aria-pressed="true"><span class="category-option-icon category-icon-ux" aria-hidden="true"></span>UX</button>
@@ -117,14 +110,29 @@
         <label for="ai-usage">AI USE <span class="optional">(optional)</span></label>
         <textarea id="ai-usage" rows="4" maxlength="500" placeholder="How did you use AI in this part of the process?"></textarea>
         <fieldset class="media-fieldset">
-          <legend>ADD A LINK, PHOTO OR VIDEO <span class="optional">(optional)</span></legend>
-          <div class="media-type-picker" role="group" aria-label="Attachment type">
-            <button type="button" class="media-type-option is-selected" data-media-type="link" aria-pressed="true">LINK</button>
-            <button type="button" class="media-type-option" data-media-type="image" aria-pressed="false">PHOTO</button>
-            <button type="button" class="media-type-option" data-media-type="video" aria-pressed="false">VIDEO</button>
+          <legend>ADD MEDIA <span class="optional">(optional)</span></legend>
+          <div id="attachment-list" class="attachment-list"></div>
+          <div class="attachment-input-group">
+            <div class="attachment-add-row">
+              <div class="attachment-link-name-field">
+                <label for="attachment-link-name">LINK NAME</label>
+                <input id="attachment-link-name" type="text" maxlength="120" placeholder="e.g. Figma board">
+              </div>
+              <div class="attachment-link-url-field">
+                <label for="attachment-link">LINK</label>
+                <input id="attachment-link" type="url" maxlength="1000" placeholder="https://...">
+              </div>
+            </div>
           </div>
-          <input id="attachment-url" type="url" maxlength="1000" placeholder="https://...">
-          <p class="form-hint">Paste a public URL. Photos and direct video files are shown in the published note.</p>
+          <div class="attachment-input-group">
+            <label for="attachment-images">PHOTOS <span class="optional">(multiple)</span></label>
+            <input id="attachment-images" type="file" accept="image/*" multiple>
+          </div>
+          <div class="attachment-input-group">
+            <label for="attachment-videos">VIDEOS <span class="optional">(multiple)</span></label>
+            <input id="attachment-videos" type="file" accept="video/*" multiple>
+          </div>
+          <p class="form-hint">Add as many links, photos and videos as you need.</p>
         </fieldset>
         <div class="note-form-actions">
           <button id="save-draft-button" type="button" class="submit-button secondary-button">SAVE DRAFT <span>↘</span></button>

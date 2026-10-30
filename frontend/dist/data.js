@@ -14,6 +14,11 @@ function normalizeCategories(value) {
   return value ? [value] : [];
 }
 
+function normalizeAttachments(post) {
+  if (Array.isArray(post.attachments)) return post.attachments;
+  return post.attachment_url ? [{ type: post.attachment_type || "link", url: post.attachment_url }] : [];
+}
+
 window.fieldnotesData = {
   configured: supabaseConfigured,
   async getPosts() {
@@ -21,13 +26,15 @@ window.fieldnotesData = {
 
     const { data, error } = await supabaseClient
       .from("posts")
-      .select("id, category, title, body, conclusion, ai_usage, attachment_type, attachment_url, author_id, date")
+      .select("id, category, title, body, conclusion, ai_usage, attachment_type, attachment_url, attachments, author_id, date")
       .order("date", { ascending: false });
 
     if (error) throw error;
 
     const authorIds = [...new Set((data || []).map(post => post.author_id).filter(Boolean))];
-    if (!authorIds.length) return data || [];
+    if (!authorIds.length) {
+      return (data || []).map(post => ({ ...post, attachments: normalizeAttachments(post) }));
+    }
 
     const { data: profiles, error: profileError } = await supabaseClient
       .from("profiles")
@@ -43,7 +50,8 @@ window.fieldnotesData = {
         ...post,
         category: normalizeCategories(post.category),
         author_name: profile?.display_name || post.author_name,
-        author_avatar: profile?.avatar_url || post.author_avatar
+        author_avatar: profile?.avatar_url || post.author_avatar,
+        attachments: normalizeAttachments(post)
       };
     });
   },
@@ -133,6 +141,32 @@ window.fieldnotesData = {
 
     if (uploadError) throw uploadError;
     return supabaseClient.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+  },
+  async uploadPostMedia(files) {
+    if (!supabaseClient) throw new Error("Supabase is not configured.");
+    const session = await this.getSession();
+    if (!session?.user?.id) throw new Error("You must be logged in.");
+    const selectedFiles = [...files];
+    if (selectedFiles.some(file => !file.type.startsWith("image/") && !file.type.startsWith("video/"))) {
+      throw new Error("Only image and video files can be uploaded.");
+    }
+    if (selectedFiles.some(file => file.size > 50 * 1024 * 1024)) {
+      throw new Error("Each photo or video must be smaller than 50 MB.");
+    }
+    return Promise.all(selectedFiles.map(async file => {
+      const extension = file.name.split(".").pop()?.toLowerCase() || "bin";
+      const path = `${session.user.id}/post-${Date.now()}-${crypto.randomUUID()}.${extension}`;
+      const { error } = await supabaseClient.storage.from("post-media").upload(path, file, {
+        cacheControl: "3600",
+        upsert: false
+      });
+      if (error) throw error;
+      return {
+        type: file.type.startsWith("video/") ? "video" : "image",
+        url: supabaseClient.storage.from("post-media").getPublicUrl(path).data.publicUrl,
+        name: file.name
+      };
+    }));
   },
   async deletePost(id) {
     if (!supabaseClient) throw new Error("Supabase is not configured.");
@@ -231,14 +265,15 @@ window.fieldnotesData = {
 
     const { data, error } = await supabaseClient
       .from("team_drafts")
-      .select("id, category, title, body, conclusion, ai_usage, attachment_type, attachment_url, author_id, updated_at")
+      .select("id, category, title, body, conclusion, ai_usage, attachment_type, attachment_url, attachments, author_id, updated_at")
       .eq("author_id", session.user.id)
       .order("updated_at", { ascending: false });
 
     if (error) throw error;
     return (data || []).map(draft => ({
       ...draft,
-      category: normalizeCategories(draft.category)
+      category: normalizeCategories(draft.category),
+      attachments: normalizeAttachments(draft)
     }));
   },
   async saveDraft(draft) {
@@ -255,6 +290,7 @@ window.fieldnotesData = {
       ai_usage: draft.ai_usage,
       attachment_type: draft.attachment_type,
       attachment_url: draft.attachment_url,
+      attachments: Array.isArray(draft.attachments) ? draft.attachments : [],
       author_id: session.user.id,
       updated_at: new Date().toISOString()
     };

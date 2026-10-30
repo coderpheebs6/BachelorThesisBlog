@@ -75,7 +75,8 @@ alter table public.posts
   add column if not exists conclusion text,
   add column if not exists ai_usage text,
   add column if not exists attachment_type text,
-  add column if not exists attachment_url text;
+  add column if not exists attachment_url text,
+  add column if not exists attachments jsonb not null default '[]'::jsonb;
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -222,6 +223,7 @@ create table if not exists public.team_drafts (
   ai_usage text,
   attachment_type text,
   attachment_url text,
+  attachments jsonb not null default '[]'::jsonb,
   updated_at timestamptz not null default now()
 );
 
@@ -252,8 +254,25 @@ alter table public.team_drafts
 -- Run this when enabling links, photos and videos on existing posts and drafts:
 alter table public.posts
   add column if not exists attachment_type text,
-  add column if not exists attachment_url text;
+  add column if not exists attachment_url text,
+  add column if not exists attachments jsonb not null default '[]'::jsonb;
 alter table public.team_drafts
   add column if not exists attachment_type text,
-  add column if not exists attachment_url text;
+  add column if not exists attachment_url text,
+  add column if not exists attachments jsonb not null default '[]'::jsonb;
+
+-- Create the public bucket used for uploaded post photos and videos:
+insert into storage.buckets (id, name, public)
+values ('post-media', 'post-media', true)
+on conflict (id) do nothing;
+
+create policy "Anyone can read post media"
+on storage.objects for select
+to anon, authenticated
+using (bucket_id = 'post-media');
+
+create policy "Team can upload post media"
+on storage.objects for insert
+to authenticated
+with check (bucket_id = 'post-media' and (storage.foldername(name))[1] = auth.uid()::text);
 ```
