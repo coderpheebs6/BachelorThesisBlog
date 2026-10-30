@@ -31,6 +31,25 @@ function publicRenderChatText(message) {
   });
 }
 
+function getPublicChatInputBeforeCaret(input) {
+  const selection = window.getSelection();
+  if (!selection.rangeCount) return input.textContent;
+  const range = selection.getRangeAt(0).cloneRange();
+  range.selectNodeContents(input);
+  range.setEnd(selection.getRangeAt(0).startContainer, selection.getRangeAt(0).startOffset);
+  return range.toString();
+}
+
+function serializePublicChatInput(input) {
+  return [...input.childNodes].map(node => {
+    if (node.nodeType === Node.TEXT_NODE) return node.textContent;
+    if (node.nodeType === Node.ELEMENT_NODE && node.matches(".chat-input-post-link")) {
+      return `[[post:${node.dataset.postId}|${encodeURIComponent(node.textContent)}]]`;
+    }
+    return node.textContent;
+  }).join("");
+}
+
 function createPublicChatDrawer() {
   const drawer = document.createElement("aside");
   drawer.className = "public-chat-drawer";
@@ -45,6 +64,7 @@ function createPublicChatDrawer() {
         <div class="public-chat-input" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Write a message..."></div>
         <button class="submit-button" type="submit">SEND</button>
       </div>
+      <div class="chat-command-menu public-chat-command-menu" hidden></div>
       <p class="form-message"></p>
     </form>
   `;
@@ -74,11 +94,118 @@ async function initPublicNav() {
   const messagesElement = drawer.querySelector(".public-chat-messages");
   const form = drawer.querySelector(".public-chat-form");
   const input = drawer.querySelector(".public-chat-input");
+  const commandMenu = drawer.querySelector(".public-chat-command-menu");
   const formMessage = drawer.querySelector(".form-message");
   const chatButton = publicNavActions.querySelector(".public-chat-button");
   const unreadBadge = chatButton.querySelector(".chat-unread-badge");
+  const sessionUserId = session.user.id;
   let latestSeenMessage = null;
   let hasLoadedMessages = false;
+  let chatPosts = [];
+  let chatPostsLoaded = false;
+  let chatPostsLoading = null;
+  let chatPostsError = null;
+  let chatCommandSelection = 0;
+
+  function hideChatCommandMenu() {
+    commandMenu.hidden = true;
+    commandMenu.innerHTML = "";
+    chatCommandSelection = 0;
+  }
+
+  function getFilteredChatPosts(query) {
+    return chatPosts.filter(post => post.title.toLowerCase().includes(query.toLowerCase()));
+  }
+
+  function showChatCommandMenu(query) {
+    const filteredPosts = getFilteredChatPosts(query);
+    chatCommandSelection = Math.min(chatCommandSelection, Math.max(filteredPosts.length - 1, 0));
+    commandMenu.innerHTML = filteredPosts.length
+      ? filteredPosts.map((post, index) => `
+        <button class="chat-command-item${index === chatCommandSelection ? " is-selected" : ""}" type="button" data-post-id="${publicEscapeHTML(post.id)}">
+          <span class="chat-command-icon">↗</span>
+          <span><strong>${publicEscapeHTML(post.title)}</strong><small>${publicEscapeHTML(post.category.join(" · ").toUpperCase())} / POST</small></span>
+        </button>
+      `).join("")
+      : `<p class="chat-command-empty">No posts found.</p>`;
+    commandMenu.hidden = false;
+  }
+
+  async function loadChatPosts() {
+    if (chatPostsLoading) return chatPostsLoading;
+    chatPostsLoading = (async () => {
+      chatPostsError = null;
+      try {
+        chatPosts = (await window.fieldnotesData.getPosts())
+          .sort((first, second) => new Date(second.date) - new Date(first.date));
+        chatPostsLoaded = true;
+      } catch (error) {
+        chatPosts = [];
+        chatPostsLoaded = false;
+        chatPostsError = error.message;
+        console.error("Loading posts for public chat links failed", error);
+      } finally {
+        chatPostsLoading = null;
+      }
+    })();
+    await chatPostsLoading;
+  }
+
+  async function updateChatCommandMenu() {
+    const beforeCursor = getPublicChatInputBeforeCaret(input);
+    const match = beforeCursor.match(/(?:^|\s)\/([^\s]*)$/);
+    if (!match) {
+      hideChatCommandMenu();
+      return;
+    }
+    if (!chatPostsLoaded) {
+      commandMenu.hidden = false;
+      commandMenu.innerHTML = `<p class="chat-command-empty">Loading posts...</p>`;
+      await loadChatPosts();
+    }
+    const currentMatch = getPublicChatInputBeforeCaret(input).match(/(?:^|\s)\/([^\s]*)$/);
+    if (!currentMatch) return;
+    if (chatPostsError) {
+      commandMenu.hidden = false;
+      commandMenu.innerHTML = `<p class="chat-command-empty">Could not load posts: ${publicEscapeHTML(chatPostsError)}</p>`;
+      return;
+    }
+    chatCommandSelection = 0;
+    showChatCommandMenu(currentMatch[1]);
+  }
+
+  function insertChatPostLink(post) {
+    if (!post) return;
+    const beforeCursor = getPublicChatInputBeforeCaret(input);
+    if (!beforeCursor.match(/(?:^|\s)\/([^\s]*)$/)) return;
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+    const range = selection.getRangeAt(0);
+    const textNode = range.startContainer;
+    if (textNode.nodeType !== Node.TEXT_NODE) return;
+    const typedText = textNode.textContent.slice(0, range.startOffset);
+    const replacementRange = document.createRange();
+    replacementRange.setStart(textNode, typedText.lastIndexOf("/"));
+    replacementRange.setEnd(textNode, range.startOffset);
+    replacementRange.deleteContents();
+    const link = document.createElement("a");
+    link.className = "chat-input-post-link";
+    link.dataset.postId = post.id;
+    link.textContent = post.title;
+    link.href = `article.html?id=${encodeURIComponent(post.id)}`;
+    link.target = "_blank";
+    link.rel = "noopener";
+    replacementRange.insertNode(link);
+    const space = document.createTextNode(" ");
+    link.after(space);
+    selection.removeAllRanges();
+    const caret = document.createRange();
+    caret.setStartAfter(space);
+    caret.collapse(true);
+    selection.addRange(caret);
+    hideChatCommandMenu();
+    input.focus();
+  }
 
   function updateUnread(messages, markAsRead = false) {
     const latestMessage = messages[messages.length - 1];
@@ -91,16 +218,34 @@ async function initPublicNav() {
     hasLoadedMessages = true;
   }
 
+  function renderPublicMessages(messages) {
+    messagesElement.innerHTML = messages.length
+      ? messages.map(message => {
+        const initials = (message.author_name || "?").split(/\s+/).map(part => part[0]).join("").slice(0, 2).toUpperCase();
+        const avatar = message.author_avatar && /^https:\/\//i.test(message.author_avatar)
+          ? `<img src="${publicEscapeHTML(message.author_avatar)}" alt="">`
+          : publicEscapeHTML(initials);
+        return `
+          <article class="team-chat-message public-chat-message${message.author_id === sessionUserId ? " is-own-message" : ""}">
+            <div class="team-chat-message-meta">
+              <div class="team-chat-author">
+                <span class="chat-avatar">${avatar}</span>
+                <strong>${publicEscapeHTML(message.author_name || "PKL Studio team")}</strong>
+              </div>
+              <time>${new Date(message.created_at).toLocaleString("nl-BE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time>
+            </div>
+            <p class="team-chat-message-body">${publicRenderChatText(message.message)}</p>
+          </article>
+        `;
+      }).join("")
+      : `<p class="muted">No messages yet. Start the conversation.</p>`;
+    messagesElement.scrollTop = messagesElement.scrollHeight;
+  }
+
   async function renderMessages() {
     const messages = await window.fieldnotesData.getChatMessages();
     updateUnread(messages);
-    messagesElement.innerHTML = messages.map(message => `
-      <article class="public-chat-message">
-        <strong>${publicEscapeHTML(message.author_name)}</strong>
-        <time>${new Date(message.created_at).toLocaleString("nl-BE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time>
-        <p>${publicRenderChatText(message.message)}</p>
-      </article>
-    `).join("") || `<p class="muted">No messages yet.</p>`;
+    renderPublicMessages(messages);
   }
 
   function close() {
@@ -113,24 +258,41 @@ async function initPublicNav() {
     overlay.classList.add("is-open");
     const messages = await window.fieldnotesData.getChatMessages();
     updateUnread(messages, true);
-    messagesElement.innerHTML = messages.map(message => `
-      <article class="public-chat-message">
-        <strong>${publicEscapeHTML(message.author_name)}</strong>
-        <time>${new Date(message.created_at).toLocaleString("nl-BE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time>
-        <p>${publicRenderChatText(message.message)}</p>
-      </article>
-    `).join("") || `<p class="muted">No messages yet.</p>`;
+    renderPublicMessages(messages);
     input.focus();
   });
   closeButton.addEventListener("click", close);
   overlay.addEventListener("click", close);
+  input.addEventListener("input", updateChatCommandMenu);
+  input.addEventListener("keydown", event => {
+    if (event.key === "Escape") hideChatCommandMenu();
+    if (commandMenu.hidden) return;
+    const match = getPublicChatInputBeforeCaret(input).match(/(?:^|\s)\/([^\s]*)$/);
+    if (!match) return;
+    const filteredPosts = getFilteredChatPosts(match[1]);
+    if (!filteredPosts.length) return;
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      chatCommandSelection = (chatCommandSelection + direction + filteredPosts.length) % filteredPosts.length;
+      showChatCommandMenu(match[1]);
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      insertChatPostLink(filteredPosts[chatCommandSelection]);
+    }
+  });
+  commandMenu.addEventListener("click", event => {
+    const button = event.target.closest(".chat-command-item");
+    if (button) insertChatPostLink(chatPosts.find(post => String(post.id) === button.dataset.postId));
+  });
   form.addEventListener("submit", async event => {
     event.preventDefault();
-    const message = input.textContent.trim();
+    const message = serializePublicChatInput(input).trim();
     if (!message) return;
     try {
       await window.fieldnotesData.addChatMessage(message);
       input.replaceChildren();
+      hideChatCommandMenu();
       formMessage.textContent = "";
       await renderMessages();
     } catch (error) {
