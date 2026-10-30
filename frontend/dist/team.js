@@ -38,6 +38,7 @@ const closeChatButton = document.getElementById("close-chat-button");
 const chatOverlay = document.getElementById("chat-overlay");
 let pendingDeleteId = null;
 let editingPostId = null;
+let unsubscribeChat = null;
 const ownPostsById = new Map();
 
 async function renderChatMessages(messages) {
@@ -274,6 +275,10 @@ async function updateAuthView() {
   const session = await window.fieldnotesData.getSession();
   loginPanel.hidden = Boolean(session);
   editorPanel.hidden = !session;
+  if (!session && unsubscribeChat) {
+    unsubscribeChat();
+    unsubscribeChat = null;
+  }
   if (session) {
     const profile = await window.fieldnotesData.getProfile();
     if (profile) {
@@ -286,6 +291,11 @@ async function updateAuthView() {
     renderTeamPosts();
     renderChatMessagesFromDatabase();
     loadDraft();
+    if (!unsubscribeChat) {
+      unsubscribeChat = window.fieldnotesData.subscribeToChatMessages(() => {
+        renderChatMessagesFromDatabase();
+      });
+    }
   }
 }
 

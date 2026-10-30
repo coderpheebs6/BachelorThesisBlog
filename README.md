@@ -179,6 +179,8 @@ create table if not exists public.team_messages (
 
 alter table public.team_messages enable row level security;
 
+alter publication supabase_realtime add table public.team_messages;
+
 create policy "Team can read chat messages"
 on public.team_messages for select
 to authenticated

@@ -172,6 +172,22 @@ window.fieldnotesData = {
 
     if (error) throw error;
   },
+  subscribeToChatMessages(callback) {
+    if (!supabaseClient) return () => {};
+
+    const channel = supabaseClient
+      .channel("team-messages-live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "team_messages" },
+        callback
+      )
+      .subscribe();
+
+    return () => {
+      supabaseClient.removeChannel(channel);
+    };
+  },
   async updateChatMessage(id, message) {
     if (!supabaseClient) throw new Error("Supabase is not configured.");
     const session = await this.getSession();
