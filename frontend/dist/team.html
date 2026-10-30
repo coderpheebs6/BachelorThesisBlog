@@ -9,13 +9,16 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="data.js?v=8" defer></script>
-  <script src="team.js?v=20" defer></script>
-  <link rel="stylesheet" crossorigin href="/BachelorThesisBlog/assets/style-B9cQWFaE.css">
+  <script src="team.js?v=27" defer></script>
+  <link rel="stylesheet" crossorigin href="/BachelorThesisBlog/assets/style-C3eW55eD.css">
 </head>
 <body class="team-page">
   <nav class="navbar">
     <a class="logo" href="index.html">PKL</a>
     <a class="nav-link" href="index.html">← PUBLIC THESIS ARCHIVE</a>
+    <button id="chat-toggle-button" class="icon-action-button chat-icon-button" type="button" aria-label="Open team chat" aria-expanded="false" aria-controls="team-chat-section">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 5.5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-8l-5 3v-3.2a2 2 0 0 1-1-1.8v-7a2 2 0 0 1 2-2Z"></path></svg>
+    </button>
   </nav>
 
   <main class="team-main">
@@ -40,8 +43,7 @@
           <h1>Add a thesis<br><span>update.</span></h1>
         </div>
         <div class="team-heading-actions">
-          <button id="chat-toggle-button" class="chat-bubble-button" type="button" aria-expanded="false" aria-controls="team-chat-section">OPEN TEAM CHAT <span>↗</span></button>
-          <button id="logout-button" class="text-button" type="button">LOG OUT</button>
+          <button id="logout-button" class="profile-menu-logout text-button" type="button">LOG OUT</button>
         </div>
       </div>
       <form id="profile-form" class="profile-form">

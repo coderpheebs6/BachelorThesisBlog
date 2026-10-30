@@ -507,6 +507,7 @@ async function updateAuthView() {
         renderChatMessagesFromDatabase();
       });
     }
+
   }
 }
 
