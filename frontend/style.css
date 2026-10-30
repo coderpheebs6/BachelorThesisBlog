@@ -586,8 +586,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .article-author { margin: 20px 0 10px; }
 .article-takeaway { display: flex; align-items: flex-start; gap: 14px; border: 1px solid var(--line); border-left: 3px solid var(--lime); padding: 20px; margin-top: 38px; }
 .article-takeaway > .takeaway-icon { display: inline-grid; flex: 0 0 24px; margin-top: 2px; }
-.article-takeaway > div { min-width: 0; flex: 1 1 auto; }
-.takeaway-heading { display: block; }
+.article-takeaway .takeaway-copy { display: block; min-width: 0; flex: 1 1 auto; }
+.article-takeaway .takeaway-copy .eyebrow { display: block; margin: 0 0 5px; color: var(--lime); }
 .article-takeaway p { margin: 10px 0 0; font-size: 1.1rem; }
 .article-ai { display: flex; align-items: flex-start; gap: 14px; border: 1px solid var(--line); border-left: 3px solid var(--blue); padding: 20px; margin-top: 18px; }
 .article-ai .ai-icon { margin-top: 2px; }
