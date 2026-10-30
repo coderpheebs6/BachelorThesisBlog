@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Team Workspace — Devine Thesis</title>
+  <title>Team Workspace — Projector Workflow Thesis</title>
   <link rel="icon" href="/BachelorThesisBlog/assets/favicon-team-CMTWGH0I.svg?v=2" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="data.js?v=9" defer></script>
-  <script src="team.js?v=29" defer></script>
-  <link rel="stylesheet" crossorigin href="/BachelorThesisBlog/assets/style-C3FOofB2.css">
+  <script src="data.js?v=12" defer></script>
+  <script src="team.js?v=33" defer></script>
+  <link rel="stylesheet" crossorigin href="/BachelorThesisBlog/assets/style-C9D4j7lT.css">
 </head>
 <body class="team-page">
   <nav class="navbar">
@@ -24,8 +24,8 @@
   <main class="team-main">
     <section id="login-panel" class="team-panel">
       <p class="eyebrow">PRIVATE / DEVINE TEAM</p>
-      <h1>Document the<br><span>thesis.</span></h1>
-      <p class="team-intro">Log in with your Howest team account to share research, design decisions and development updates.</p>
+      <h1>Document the<br><span>process.</span></h1>
+      <p class="team-intro">Log in with your Howest team account to share research, experiments, feedback and development updates.</p>
       <form id="login-form" class="team-form">
         <label for="email">EMAIL</label>
         <input id="email" type="email" required autocomplete="email">
@@ -40,7 +40,7 @@
       <div class="team-heading">
         <div>
           <p class="eyebrow">PRIVATE / DEVINE TEAM</p>
-          <h1>Add a thesis<br><span>update.</span></h1>
+          <h1>Share a process<br><span>update.</span></h1>
         </div>
         <div class="team-heading-actions">
           <button id="logout-button" class="profile-menu-logout text-button" type="button">LOG OUT</button>
@@ -95,16 +95,17 @@
         <div class="form-heading">
           <div>
             <p class="eyebrow">NEW THESIS UPDATE</p>
-            <h2>Make a blog<br><span>post.</span></h2>
+            <h2>Document an<br><span>experiment.</span></h2>
           </div>
           <button id="close-post-button" class="text-button" type="button" hidden>CLOSE</button>
         </div>
-        <label for="category">CATEGORY</label>
-        <select id="category" required>
-          <option value="ux">UX</option>
-          <option value="design">DESIGN</option>
-          <option value="code">CODE</option>
-        </select>
+        <span class="form-section-label">THESIS PILLARS <span class="optional">(choose one or more)</span></span>
+        <div id="category" class="category-picker" role="group" aria-label="Thesis pillars">
+          <button type="button" class="category-option is-selected" data-category="ux" aria-pressed="true"><span class="category-option-icon category-icon-ux" aria-hidden="true"></span>UX</button>
+          <button type="button" class="category-option" data-category="design" aria-pressed="false"><span class="category-option-icon category-icon-design" aria-hidden="true"></span>DESIGN</button>
+          <button type="button" class="category-option" data-category="code" aria-pressed="false"><span class="category-option-icon category-icon-code" aria-hidden="true"></span>DEVELOPMENT</button>
+        </div>
+        <p id="category-message" class="form-message" aria-live="polite"></p>
         <div id="note-form-label" class="form-section-label">01 / WRITE THE NOTE</div>
         <label for="title">TITLE</label>
         <input id="title" type="text" maxlength="80" required>
@@ -124,8 +125,7 @@
       <div class="team-content-section">
         <div class="team-content-heading">
           <div>
-            <p class="eyebrow">YOUR PUBLISHED THESIS UPDATES</p>
-            <p class="muted">Notes that are live in the public archive.</p>
+            <p class="eyebrow">YOUR PUBLISHED PROCESS POSTS</p>
           </div>
         </div>
         <div id="team-posts" class="team-posts"></div>
@@ -134,7 +134,6 @@
         <div class="team-content-heading">
           <div>
             <p class="eyebrow">YOUR SAVED DRAFTS</p>
-            <p class="muted">Notes still in progress and visible only to you.</p>
           </div>
         </div>
         <div id="team-drafts" class="team-posts"></div>

@@ -23,6 +23,10 @@ function categoryLabel(value) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+function categoryLabels(values) {
+  return values.map(categoryLabel).join(" · ");
+}
+
 function authorMarkup(post) {
   const name = post.author_name || "Devine thesis team";
   const initials = name.split(/\s+/).map(part => part[0]).join("").slice(0, 2).toUpperCase();
@@ -40,7 +44,7 @@ async function renderCategory() {
   let posts;
   try {
     posts = (await window.fieldnotesData.getPosts())
-      .filter(post => post.category === category);
+      .filter(post => post.category.includes(category));
   } catch {
     container.innerHTML = `<p class="empty-state">The archive is temporarily unavailable.</p>`;
     return;
@@ -61,7 +65,7 @@ async function renderCategory() {
 
   container.innerHTML = posts.map(post => `
     <a class="latest-card" href="article.html?id=${encodeURIComponent(post.id)}">
-      <span class="note-tag">${escapeHTML(post.category)} / ${formatDate(post.date)}</span>
+      <span class="note-tag">${escapeHTML(categoryLabels(post.category))} / ${formatDate(post.date)}</span>
       <h3>${escapeHTML(post.title)}</h3>
       <p>${escapeHTML(post.body.slice(0, 140))}${post.body.length > 140 ? "…" : ""}</p>
       <span class="note-footer">${authorMarkup(post)}<span class="read-more">READ NOTE ↗</span></span>
@@ -104,11 +108,11 @@ async function renderArticle() {
   document.title = `${post.title} — Devine thesis`;
 
   const backLink = document.getElementById("back-link");
-  if (backLink) backLink.href = `${post.category}.html`;
+  if (backLink) backLink.href = `${post.category[0] || "ux"}.html`;
 
   container.innerHTML = `
-    <p class="eyebrow note-heading"><span class="note-icon" aria-hidden="true"></span>DEVINE THESIS / ${escapeHTML(categoryLabel(post.category))}</p>
-    <p class="article-date">${formatDate(post.date)} · ${escapeHTML(categoryLabel(post.category))}</p>
+    <p class="eyebrow note-heading"><span class="note-icon" aria-hidden="true"></span>PROCESS BLOG / ${escapeHTML(categoryLabels(post.category))}</p>
+    <p class="article-date">${formatDate(post.date)} · ${escapeHTML(categoryLabels(post.category))}</p>
     <div class="article-author">${authorMarkup(post)}</div>
     <h1>${escapeHTML(post.title)}</h1>
     <div class="article-body">${escapeHTML(post.body)}</div>

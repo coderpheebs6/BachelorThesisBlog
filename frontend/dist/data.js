@@ -9,6 +9,11 @@ const supabaseClient = supabaseConfigured
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 
+function normalizeCategories(value) {
+  if (Array.isArray(value)) return value;
+  return value ? [value] : [];
+}
+
 window.fieldnotesData = {
   configured: supabaseConfigured,
   async getPosts() {
@@ -36,6 +41,7 @@ window.fieldnotesData = {
       const profile = profileById.get(post.author_id);
       return {
         ...post,
+        category: normalizeCategories(post.category),
         author_name: profile?.display_name || post.author_name,
         author_avatar: profile?.avatar_url || post.author_avatar
       };
@@ -54,7 +60,7 @@ window.fieldnotesData = {
       .single();
 
     if (error) throw error;
-    return data;
+    return { ...data, category: normalizeCategories(data?.category) };
   },
   async updatePost(id, post) {
     if (!supabaseClient) throw new Error("Supabase is not configured.");
@@ -230,7 +236,10 @@ window.fieldnotesData = {
       .order("updated_at", { ascending: false });
 
     if (error) throw error;
-    return data;
+    return (data || []).map(draft => ({
+      ...draft,
+      category: normalizeCategories(draft.category)
+    }));
   },
   async saveDraft(draft) {
     if (!supabaseClient) throw new Error("Supabase is not configured.");
@@ -239,7 +248,7 @@ window.fieldnotesData = {
 
     const draftId = draft.id;
     const draftValues = {
-      category: draft.category,
+      category: Array.isArray(draft.category) ? draft.category : [draft.category],
       title: draft.title,
       body: draft.body,
       conclusion: draft.conclusion,

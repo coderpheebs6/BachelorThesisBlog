@@ -27,6 +27,8 @@ const previewTakeaway = document.getElementById("preview-takeaway");
 const previewAi = document.getElementById("preview-ai");
 const noteFormLabel = document.getElementById("note-form-label");
 const noteSubmitButton = document.getElementById("note-submit-button");
+const categoryPicker = document.getElementById("category");
+const categoryMessage = document.getElementById("category-message");
 const cancelEditButton = document.getElementById("cancel-edit-button");
 const teamChatMessages = document.getElementById("team-chat-messages");
 const teamChatForm = document.getElementById("team-chat-form");
@@ -130,7 +132,7 @@ function showChatCommandMenu(query) {
     ? filteredPosts.map((post, index) => `
       <button class="chat-command-item${index === chatCommandSelection ? " is-selected" : ""}" type="button" data-post-id="${escapeHTML(post.id)}">
         <span class="chat-command-icon">↗</span>
-        <span><strong>${escapeHTML(post.title)}</strong><small>${escapeHTML(post.category.toUpperCase())} / POST</small></span>
+        <span><strong>${escapeHTML(post.title)}</strong><small>${escapeHTML(post.category.join(" · ").toUpperCase())} / POST</small></span>
       </button>
     `).join("")
     : `<p class="chat-command-empty">No posts found.</p>`;
@@ -331,7 +333,7 @@ function closePreview() {
 }
 
 function openPreview(post) {
-  previewCategory.textContent = `${post.category.toUpperCase()} / THESIS NOTE`;
+  previewCategory.textContent = `${post.category.join(" · ").toUpperCase()} / THESIS NOTE`;
   previewTitle.textContent = post.title;
   previewDate.textContent = formatDate(post.date);
   previewBody.textContent = post.body;
@@ -381,7 +383,7 @@ function escapeHTML(value) {
 
 function getNoteFormValues() {
   return {
-    category: document.getElementById("category").value,
+    category: [...categoryPicker.querySelectorAll(".category-option.is-selected")].map(button => button.dataset.category),
     title: document.getElementById("title").value.trim(),
     body: document.getElementById("body").value.trim(),
     conclusion: document.getElementById("conclusion").value.trim() || null,
@@ -390,11 +392,25 @@ function getNoteFormValues() {
 }
 
 function fillNoteForm(note) {
-  document.getElementById("category").value = note.category || "ux";
+  const categories = Array.isArray(note.category) ? note.category : [note.category || "ux"];
+  categoryPicker.querySelectorAll(".category-option").forEach(button => {
+    const selected = categories.includes(button.dataset.category);
+    button.classList.toggle("is-selected", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
   document.getElementById("title").value = note.title || "";
   document.getElementById("body").value = note.body || "";
   document.getElementById("conclusion").value = note.conclusion || "";
   document.getElementById("ai-usage").value = note.ai_usage || "";
+}
+
+function resetCategoryPicker() {
+  categoryPicker.querySelectorAll(".category-option").forEach(button => {
+    const selected = button.dataset.category === "ux";
+    button.classList.toggle("is-selected", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
+  categoryMessage.textContent = "";
 }
 
 async function loadDraft() {
@@ -403,7 +419,6 @@ async function loadDraft() {
     if (!draft) return;
     editingDraftId = draft.id;
     fillNoteForm(draft);
-    showMessage(teamMessage, "Draft restored.");
   } catch (error) {
     showMessage(teamMessage, `Could not load your draft: ${error.message}`);
     console.error("Loading draft failed", error);
@@ -420,7 +435,7 @@ async function renderTeamDrafts() {
         <article class="team-post team-draft" data-id="${escapeHTML(draft.id)}">
           <div class="team-post-content">
             <div class="team-post-meta">
-              <span class="team-post-category">${escapeHTML(draft.category)}</span>
+              <span class="team-post-category">${escapeHTML(draft.category.join(" · ").toUpperCase())}</span>
               <span class="team-post-status is-draft">DRAFT</span>
               <time>${formatDate(draft.updated_at)}</time>
             </div>
@@ -470,7 +485,7 @@ async function renderTeamPosts() {
         <article class="team-post" data-id="${escapeHTML(post.id)}">
           <div class="team-post-content" tabindex="0" role="button" aria-label="Preview ${escapeHTML(post.title)}">
             <div class="team-post-meta">
-              <span class="team-post-category">${escapeHTML(post.category)}</span>
+              <span class="team-post-category">${escapeHTML(post.category.join(" · ").toUpperCase())}</span>
               <span class="team-post-status is-published">PUBLISHED</span>
               <time>${formatDate(post.date)}</time>
             </div>
@@ -511,7 +526,6 @@ async function updateAuthView() {
     renderTeamDrafts();
     renderChatMessagesFromDatabase();
     loadChatPosts();
-    loadDraft();
     if (!unsubscribeChat) {
       unsubscribeChat = window.fieldnotesData.subscribeToChatMessages(() => {
         renderChatMessagesFromDatabase();
@@ -642,12 +656,26 @@ teamForm.addEventListener("submit", async event => {
       showMessage(teamMessage, "Note published.");
     }
     teamForm.reset();
+    resetCategoryPicker();
     await renderTeamPosts();
     await renderTeamDrafts();
   } catch (error) {
     showMessage(teamMessage, `Could not save the note: ${error.message}`);
     console.error("Saving note failed", error);
   }
+});
+
+categoryPicker.addEventListener("click", event => {
+  const button = event.target.closest(".category-option");
+  if (!button) return;
+  const selectedButtons = categoryPicker.querySelectorAll(".category-option.is-selected");
+  if (button.classList.contains("is-selected") && selectedButtons.length === 1) {
+    categoryMessage.textContent = "Choose at least one thesis pillar.";
+    return;
+  }
+  button.classList.toggle("is-selected");
+  button.setAttribute("aria-pressed", String(button.classList.contains("is-selected")));
+  categoryMessage.textContent = "";
 });
 
 saveDraftButton.addEventListener("click", async () => {
@@ -661,6 +689,7 @@ saveDraftButton.addEventListener("click", async () => {
   try {
     await window.fieldnotesData.saveDraft({ ...draft, id: editingDraftId });
     teamForm.reset();
+    resetCategoryPicker();
     editingPostId = null;
     editingDraftId = null;
     noteFormLabel.textContent = "01 / WRITE THE NOTE";
