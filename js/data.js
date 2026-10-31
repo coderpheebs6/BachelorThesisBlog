@@ -21,13 +21,14 @@ function normalizeAttachments(post) {
 
 window.fieldnotesData = {
   configured: supabaseConfigured,
-  async getPosts() {
+  async getPosts(includeDeleted = false) {
     if (!supabaseClient) return [];
 
-    const { data, error } = await supabaseClient
+    let postsQuery = supabaseClient
       .from("posts")
-      .select("id, category, title, body, conclusion, ai_usage, attachment_type, attachment_url, attachments, author_id, date")
-      .order("date", { ascending: false });
+      .select("id, category, title, body, conclusion, ai_usage, attachment_type, attachment_url, attachments, author_id, date, deleted_at");
+    if (!includeDeleted) postsQuery = postsQuery.is("deleted_at", null);
+    const { data, error } = await postsQuery.order("date", { ascending: false });
 
     if (error) throw error;
 
@@ -80,7 +81,6 @@ window.fieldnotesData = {
       .from("posts")
       .update(post)
       .eq("id", id)
-      .eq("author_id", session.user.id)
       .select()
       .maybeSingle();
 
@@ -170,7 +170,16 @@ window.fieldnotesData = {
   },
   async deletePost(id) {
     if (!supabaseClient) throw new Error("Supabase is not configured.");
-
+    const { error } = await supabaseClient.from("posts").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+    if (error) throw error;
+  },
+  async restorePost(id) {
+    if (!supabaseClient) throw new Error("Supabase is not configured.");
+    const { error } = await supabaseClient.from("posts").update({ deleted_at: null }).eq("id", id);
+    if (error) throw error;
+  },
+  async permanentlyDeletePost(id) {
+    if (!supabaseClient) throw new Error("Supabase is not configured.");
     const { error } = await supabaseClient.from("posts").delete().eq("id", id);
     if (error) throw error;
   },
@@ -258,16 +267,17 @@ window.fieldnotesData = {
     const drafts = await this.getDrafts();
     return drafts[0] || null;
   },
-  async getDrafts() {
+  async getDrafts(includeDeleted = false) {
     if (!supabaseClient) return [];
     const session = await this.getSession();
     if (!session?.user?.id) return [];
 
-    const { data, error } = await supabaseClient
+    let draftsQuery = supabaseClient
       .from("team_drafts")
-      .select("id, category, title, body, conclusion, ai_usage, attachment_type, attachment_url, attachments, author_id, updated_at")
-      .eq("author_id", session.user.id)
-      .order("updated_at", { ascending: false });
+      .select("id, category, title, body, conclusion, ai_usage, attachment_type, attachment_url, attachments, author_id, updated_at, deleted_at")
+      .eq("author_id", session.user.id);
+    if (!includeDeleted) draftsQuery = draftsQuery.is("deleted_at", null);
+    const { data, error } = await draftsQuery.order("updated_at", { ascending: false });
 
     if (error) throw error;
     return (data || []).map(draft => ({
@@ -302,17 +312,25 @@ window.fieldnotesData = {
     if (error) throw error;
   },
   async deleteDraft(id) {
-    if (!supabaseClient) return;
+    if (!supabaseClient) throw new Error("Supabase is not configured.");
     const session = await this.getSession();
-    if (!session?.user?.id) return;
+    if (!session?.user?.id) throw new Error("You must be logged in.");
 
-    let query = supabaseClient
+    const { error } = await supabaseClient
       .from("team_drafts")
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id)
       .eq("author_id", session.user.id);
-    if (id) query = query.eq("id", id);
-    const { error } = await query;
-
+    if (error) throw error;
+  },
+  async restoreDraft(id) {
+    if (!supabaseClient) throw new Error("Supabase is not configured.");
+    const { error } = await supabaseClient.from("team_drafts").update({ deleted_at: null }).eq("id", id);
+    if (error) throw error;
+  },
+  async permanentlyDeleteDraft(id) {
+    if (!supabaseClient) throw new Error("Supabase is not configured.");
+    const { error } = await supabaseClient.from("team_drafts").delete().eq("id", id);
     if (error) throw error;
   },
   async signIn(email, password) {

@@ -8,9 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="data.js?v=14" defer></script>
-  <script src="team.js?v=39" defer></script>
-  <link rel="stylesheet" crossorigin href="/BachelorThesisBlog/assets/style-BEbmTUIC.css">
+  <script src="data.js?v=17" defer></script>
+  <script src="team.js?v=43" defer></script>
+  <link rel="stylesheet" crossorigin href="/BachelorThesisBlog/assets/style-Bv1kjH5I.css">
 </head>
 <body class="team-page">
   <nav class="navbar">
@@ -157,17 +157,23 @@
         </div>
         <div id="team-drafts" class="team-posts"></div>
       </div>
+      <div class="team-content-section team-deleted-section">
+        <div class="team-content-heading">
+          <div><p class="eyebrow">DELETED PROCESS POSTS</p></div>
+        </div>
+        <div id="team-deleted-posts" class="team-posts"></div>
+      </div>
     </section>
   </main>
   <div id="chat-overlay" class="chat-overlay" hidden></div>
   <div id="delete-modal" class="delete-modal" aria-hidden="true">
     <div class="delete-modal-card" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
       <p class="eyebrow">REMOVE NOTE</p>
-      <h2 id="delete-modal-title">Delete this note?</h2>
+      <h2 id="delete-modal-title">Delete this item?</h2>
       <p id="delete-modal-message" class="muted">This action cannot be undone.</p>
       <div class="delete-modal-actions">
         <button id="cancel-delete-button" class="text-button" type="button">KEEP NOTE</button>
-        <button id="confirm-delete-button" class="delete-confirm-button" type="button">DELETE NOTE</button>
+        <button id="confirm-delete-button" class="delete-confirm-button" type="button">DELETE</button>
       </div>
     </div>
   </div>

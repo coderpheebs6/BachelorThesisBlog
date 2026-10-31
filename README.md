@@ -76,7 +76,8 @@ alter table public.posts
   add column if not exists ai_usage text,
   add column if not exists attachment_type text,
   add column if not exists attachment_url text,
-  add column if not exists attachments jsonb not null default '[]'::jsonb;
+  add column if not exists attachments jsonb not null default '[]'::jsonb,
+  add column if not exists deleted_at timestamptz;
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -162,6 +163,20 @@ on public.posts for update
 to authenticated
 using (auth.uid() = author_id)
 with check (auth.uid() = author_id);
+
+-- For shared team editing and the post recycle bin, replace the own-author policy:
+drop policy if exists "Team can update own posts" on public.posts;
+create policy "Team can update posts"
+on public.posts for update
+to authenticated
+using (true)
+with check (true);
+
+drop policy if exists "Team can delete posts" on public.posts;
+create policy "Team can delete posts"
+on public.posts for delete
+to authenticated
+using (true);
 
 drop policy if exists "Team can add posts" on public.posts;
 ```
@@ -255,11 +270,16 @@ alter table public.team_drafts
 alter table public.posts
   add column if not exists attachment_type text,
   add column if not exists attachment_url text,
-  add column if not exists attachments jsonb not null default '[]'::jsonb;
+  add column if not exists attachments jsonb not null default '[]'::jsonb,
+  add column if not exists deleted_at timestamptz;
 alter table public.team_drafts
   add column if not exists attachment_type text,
   add column if not exists attachment_url text,
   add column if not exists attachments jsonb not null default '[]'::jsonb;
+
+-- Run this to enable the team post recycle bin:
+alter table public.posts
+  add column if not exists deleted_at timestamptz;
 
 -- Create the public bucket used for uploaded post photos and videos:
 insert into storage.buckets (id, name, public)

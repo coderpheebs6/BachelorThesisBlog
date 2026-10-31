@@ -781,6 +781,10 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .team-post { display: flex; min-height: 220px; flex-direction: column; justify-content: space-between; gap: 24px; padding: 20px; border: 1px solid var(--line); border-top: 3px solid var(--lime); background: var(--surface); transition: border-color .2s ease, transform .2s ease, background .2s ease; }
 .team-post:hover { border-color: var(--lime); background: var(--surface-hover); transform: translateY(-2px); }
 .team-draft { border-top-color: var(--blue); }
+.team-post-actions .publish-team-draft { color: var(--lime); }
+.team-deleted-section { border-top: 1px solid var(--line); }
+.team-deleted-post { border-top-color: var(--muted); opacity: .8; }
+.team-deleted-post .team-post-status { color: var(--muted); }
 .team-post-content { cursor: pointer; min-width: 0; }
 .team-post h2 { margin: 16px 0 10px; font-size: 1.15rem; line-height: 1.2; }
 .team-post-excerpt { display: -webkit-box; margin: 0; overflow: hidden; color: var(--muted); font-size: .86rem; line-height: 1.55; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }

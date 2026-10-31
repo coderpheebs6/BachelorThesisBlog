@@ -6,6 +6,7 @@ const loginMessage = document.getElementById("login-message");
 const teamMessage = document.getElementById("team-message");
 const teamPosts = document.getElementById("team-posts");
 const teamDrafts = document.getElementById("team-drafts");
+const teamDeletedPosts = document.getElementById("team-deleted-posts");
 const profileForm = document.getElementById("profile-form");
 const profileMessage = document.getElementById("profile-message");
 const avatarPreview = document.getElementById("avatar-preview");
@@ -46,6 +47,7 @@ const closeChatButton = document.getElementById("close-chat-button");
 const chatOverlay = document.getElementById("chat-overlay");
 const chatCommandMenu = document.getElementById("chat-command-menu");
 let pendingDeleteId = null;
+let pendingDeleteAction = null;
 let editingPostId = null;
 let editingDraftId = null;
 let unsubscribeChat = null;
@@ -278,14 +280,15 @@ teamChatMessages.addEventListener("click", async event => {
     return;
   }
 
-  if (deleteButton && window.confirm("Delete this message?")) {
-    try {
-      await window.fieldnotesData.deleteChatMessage(deleteButton.dataset.id);
-      await renderChatMessagesFromDatabase();
-    } catch (error) {
-      showMessage(chatMessage, `Could not delete message: ${error.message}`);
-      console.error("Deleting team chat message failed", error);
-    }
+  if (deleteButton) {
+    openDeleteModal(
+      { id: deleteButton.dataset.id, title: "this message" },
+      "This message will be permanently deleted.",
+      async () => {
+        await window.fieldnotesData.deleteChatMessage(deleteButton.dataset.id);
+        await renderChatMessagesFromDatabase();
+      }
+    );
   }
 });
 
@@ -332,13 +335,15 @@ async function loadChatPosts() {
 
 function closeDeleteModal() {
   pendingDeleteId = null;
+  pendingDeleteAction = null;
   deleteModal.classList.remove("is-open");
   deleteModal.setAttribute("aria-hidden", "true");
 }
 
-function openDeleteModal(post) {
+function openDeleteModal(post, message, action) {
   pendingDeleteId = post.id;
-  deleteModalMessage.textContent = `"${post.title}" will be permanently removed from your published notes.`;
+  pendingDeleteAction = action;
+  deleteModalMessage.textContent = message || `"${post.title}" will be removed.`;
   deleteModal.classList.add("is-open");
   deleteModal.setAttribute("aria-hidden", "false");
   cancelDeleteButton.focus();
@@ -526,7 +531,8 @@ async function renderTeamDrafts() {
           </div>
           <div class="team-post-actions">
             <button class="text-button edit-team-draft" data-id="${escapeHTML(draft.id)}" type="button">EDIT</button>
-            <button class="text-button delete-team-draft" data-id="${escapeHTML(draft.id)}" type="button">DELETE</button>
+          <button class="text-button publish-team-draft" data-id="${escapeHTML(draft.id)}" type="button">PUBLISH</button>
+          <button class="text-button delete-team-draft" data-id="${escapeHTML(draft.id)}" type="button">DELETE</button>
           </div>
         </article>
       `).join("")
@@ -581,9 +587,41 @@ async function renderTeamPosts() {
         </article>
       `).join("")
       : `<p class="muted">You have not published any notes yet.</p>`;
+    await renderDeletedPosts();
   } catch (error) {
     showMessage(teamMessage, `Could not load notes: ${error.message}`);
     console.error("Loading notes failed", error);
+  }
+
+  async function renderDeletedPosts() {
+    const posts = (await window.fieldnotesData.getPosts(true)).filter(post => post.deleted_at);
+      const deletedDrafts = (await window.fieldnotesData.getDrafts(true)).filter(draft => draft.deleted_at);
+      posts.forEach(post => ownPostsById.set(String(post.id), post));
+      deletedDrafts.forEach(draft => ownDraftsById.set(String(draft.id), draft));
+      const items = [
+        ...posts.map(post => ({ ...post, deletedItemType: "post" })),
+        ...deletedDrafts.map(draft => ({ ...draft, deletedItemType: "draft", date: draft.updated_at }))
+      ];
+      teamDeletedPosts.innerHTML = items.length
+        ? items.map(item => `
+          <article class="team-post team-deleted-post" data-id="${escapeHTML(item.id)}" data-item-type="${item.deletedItemType}">
+            <div class="team-post-content">
+              <div class="team-post-meta">
+                <span class="team-post-category">${escapeHTML(item.category.join(" · ").toUpperCase())}</span>
+                <span class="team-post-status is-deleted">DELETED ${item.deletedItemType === "draft" ? "DRAFT" : "POST"}</span>
+                <time>${formatDate(item.deleted_at)}</time>
+              </div>
+              <h2>${escapeHTML(item.title || "Untitled draft")}</h2>
+              <p class="team-post-excerpt">${escapeHTML(item.body?.slice(0, 120) || "No note content yet.")}</p>
+            </div>
+            <div class="team-post-actions">
+              <button class="text-button edit-deleted-post" data-id="${escapeHTML(item.id)}" type="button">EDIT</button>
+              <button class="text-button restore-deleted-post" data-id="${escapeHTML(item.id)}" type="button">RECOVER</button>
+              <button class="text-button permanent-delete-post" data-id="${escapeHTML(item.id)}" type="button">DELETE PERMANENTLY</button>
+            </div>
+          </article>
+        `).join("")
+      : `<p class="muted">No deleted posts.</p>`;
   }
 }
 
@@ -737,6 +775,10 @@ teamForm.addEventListener("submit", async event => {
       showMessage(teamMessage, "Note updated.");
     } else {
       await window.fieldnotesData.addPost({ ...note, date: new Date().toISOString() });
+      if (editingDraftId) {
+        await window.fieldnotesData.permanentlyDeleteDraft(editingDraftId);
+        editingDraftId = null;
+      }
       showMessage(teamMessage, "Note published.");
     }
     teamForm.reset();
@@ -834,6 +876,7 @@ saveDraftButton.addEventListener("click", async () => {
 
 teamDrafts.addEventListener("click", async event => {
   const editButton = event.target.closest(".edit-team-draft");
+  const publishButton = event.target.closest(".publish-team-draft");
   const deleteButton = event.target.closest(".delete-team-draft");
   if (editButton) {
     const draft = ownDraftsById.get(String(editButton.dataset.id));
@@ -845,14 +888,81 @@ teamDrafts.addEventListener("click", async event => {
     showMessage(teamMessage, "Draft loaded.");
     return;
   }
-  if (deleteButton && window.confirm("Delete this draft?")) {
+  if (publishButton) {
+    const draft = ownDraftsById.get(String(publishButton.dataset.id));
+    if (!draft) return;
     try {
-      await window.fieldnotesData.deleteDraft(deleteButton.dataset.id);
+      await window.fieldnotesData.addPost({
+        category: draft.category,
+        title: draft.title,
+        body: draft.body,
+        conclusion: draft.conclusion,
+        ai_usage: draft.ai_usage,
+        attachments: draft.attachments || [],
+        attachment_type: draft.attachment_type || null,
+        attachment_url: draft.attachment_url || null,
+        date: new Date().toISOString()
+      });
+      await window.fieldnotesData.deleteDraft(draft.id);
       await renderTeamDrafts();
+      await renderTeamPosts();
+      showMessage(teamMessage, "Draft published.");
     } catch (error) {
-      showMessage(teamMessage, `Could not delete the draft: ${error.message}`);
-      console.error("Deleting draft failed", error);
+      showMessage(teamMessage, `Could not publish the draft: ${error.message}`);
+      console.error("Publishing draft failed", error);
     }
+    return;
+  }
+  if (deleteButton) {
+    const draft = ownDraftsById.get(String(deleteButton.dataset.id));
+    if (!draft) return;
+    openDeleteModal(
+      { id: draft.id, title: draft.title || "this draft" },
+      `"${draft.title || "Untitled draft"}" will be permanently deleted.`,
+      async () => {
+        await window.fieldnotesData.deleteDraft(deleteButton.dataset.id);
+        await renderTeamDrafts();
+      }
+    );
+  }
+});
+
+teamDeletedPosts.addEventListener("click", async event => {
+  const card = event.target.closest("[data-id]");
+  const id = card?.dataset.id;
+  const itemType = card?.dataset.itemType;
+  const item = itemType === "draft" ? ownDraftsById.get(String(id)) : ownPostsById.get(String(id));
+  if (!item) return;
+  try {
+    if (event.target.closest(".edit-deleted-post")) {
+      editingPostId = itemType === "draft" ? null : item.id;
+      editingDraftId = itemType === "draft" ? item.id : null;
+      fillNoteForm(item);
+      noteFormLabel.textContent = "01 / EDIT THE NOTE";
+      noteSubmitButton.innerHTML = "SAVE CHANGES <span>↗</span>";
+      cancelEditButton.hidden = false;
+      teamForm.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("title").focus();
+    } else if (event.target.closest(".restore-deleted-post")) {
+      if (itemType === "draft") await window.fieldnotesData.restoreDraft(item.id);
+      else await window.fieldnotesData.restorePost(item.id);
+      await renderTeamPosts();
+      showMessage(teamMessage, "Post recovered.");
+    } else if (event.target.closest(".permanent-delete-post")) {
+      openDeleteModal(
+        item,
+        `"${item.title || "Untitled draft"}" will be permanently deleted. This cannot be undone.`,
+        async () => {
+          if (itemType === "draft") await window.fieldnotesData.permanentlyDeleteDraft(item.id);
+          else await window.fieldnotesData.permanentlyDeletePost(item.id);
+          await renderTeamPosts();
+          showMessage(teamMessage, "Post permanently deleted.");
+        }
+      );
+    }
+  } catch (error) {
+    showMessage(teamMessage, `Could not update deleted post: ${error.message}`);
+    console.error("Updating deleted post failed", error);
   }
 });
 
@@ -895,7 +1005,14 @@ teamPosts.addEventListener("click", async event => {
       return;
     }
 
-    openDeleteModal(post);
+    openDeleteModal(
+      post,
+      `"${post.title}" will be moved to deleted posts. You can recover it later.`,
+      async () => {
+        await window.fieldnotesData.deletePost(post.id);
+        await renderTeamPosts();
+      }
+    );
   } catch (error) {
     showMessage(teamMessage, `Could not prepare the note for deletion: ${error.message}`);
     console.error("Preparing note deletion failed", error);
@@ -916,7 +1033,7 @@ cancelEditButton.addEventListener("click", () => {
   noteFormLabel.textContent = "01 / WRITE THE NOTE";
   noteSubmitButton.innerHTML = "PUBLISH NOTE <span>↗</span>";
   cancelEditButton.hidden = true;
-  resetMediaPicker();
+  resetCategoryPicker();
   showMessage(teamMessage, "");
 });
 
@@ -925,15 +1042,14 @@ cancelDeleteButton.addEventListener("click", () => {
 });
 
 confirmDeleteButton.addEventListener("click", async () => {
-  if (!pendingDeleteId) return;
-  const postId = pendingDeleteId;
+  if (!pendingDeleteId || !pendingDeleteAction) return;
+  const action = pendingDeleteAction;
   closeDeleteModal();
   try {
-    await window.fieldnotesData.deletePost(postId);
-    await renderTeamPosts();
+    await action();
   } catch (error) {
-    showMessage(teamMessage, "Could not delete the note.");
-    console.error("Deleting note failed", error);
+    showMessage(teamMessage, `Could not delete: ${error.message}`);
+    console.error("Delete action failed", error);
   }
 });
 
