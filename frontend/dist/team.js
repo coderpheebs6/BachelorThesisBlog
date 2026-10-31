@@ -355,8 +355,17 @@ function openPreview(post) {
   previewDate.textContent = formatDate(post.date);
   previewBody.textContent = post.body;
   const previewMedia = document.getElementById("preview-media");
-  previewMedia.innerHTML = renderAttachments(post);
-  previewMedia.hidden = !getAttachments(post).length;
+  const mediaAttachments = getAttachments(post).filter(attachment => attachment.type === "image" || attachment.type === "video");
+  previewMedia.innerHTML = renderAttachments({ attachments: mediaAttachments });
+  previewMedia.hidden = !mediaAttachments.length;
+  const previewLinks = document.getElementById("preview-links");
+  const links = getAttachments(post).filter(attachment => attachment.type === "link");
+  previewLinks.innerHTML = links.length
+    ? `<span class="eyebrow">LINKS</span>${links.map(link => `
+        <p class="post-attachment"><a href="${escapeHTML(safeAttachmentUrl(link.url))}" target="_blank" rel="noopener noreferrer">${escapeHTML(link.name || link.url)} ↗</a></p>
+      `).join("")}`
+    : "";
+  previewLinks.hidden = !links.length;
   previewTakeaway.hidden = !post.conclusion;
   previewTakeaway.innerHTML = post.conclusion
     ? `<span class="takeaway-icon" aria-hidden="true"></span><div><strong>KEY TAKEAWAY</strong><p>${escapeHTML(post.conclusion)}</p></div>`
