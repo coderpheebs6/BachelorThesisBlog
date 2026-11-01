@@ -99,8 +99,7 @@ async function initPublicNav() {
   const chatButton = publicNavActions.querySelector(".public-chat-button");
   const unreadBadge = chatButton.querySelector(".chat-unread-badge");
   const sessionUserId = session.user.id;
-  let latestSeenMessage = null;
-  let hasLoadedMessages = false;
+  const chatUnreadStorageKey = `fieldnotes-chat-read:${sessionUserId}`;
   let chatPosts = [];
   let chatPostsLoaded = false;
   let chatPostsLoading = null;
@@ -208,14 +207,25 @@ async function initPublicNav() {
   }
 
   function updateUnread(messages, markAsRead = false) {
-    const latestMessage = messages[messages.length - 1];
-    if (!hasLoadedMessages && latestMessage) latestSeenMessage = latestMessage.created_at;
-    if (markAsRead && latestMessage) latestSeenMessage = latestMessage.created_at;
-    const hasUnread = hasLoadedMessages && !drawer.classList.contains("is-open")
-      && latestMessage && latestMessage.created_at > latestSeenMessage;
-    unreadBadge.classList.toggle("is-visible", Boolean(hasUnread));
-    chatButton.setAttribute("aria-label", hasUnread ? "Open team chat, unread messages" : "Open team chat");
-    hasLoadedMessages = true;
+    const readableMessages = messages.filter(message => message.author_id !== sessionUserId);
+    const latestMessage = readableMessages[readableMessages.length - 1];
+    let lastReadAt = localStorage.getItem(chatUnreadStorageKey);
+    if (!lastReadAt && latestMessage) {
+      lastReadAt = latestMessage.created_at;
+      localStorage.setItem(chatUnreadStorageKey, lastReadAt);
+    }
+    if (markAsRead && latestMessage) {
+      lastReadAt = latestMessage.created_at;
+      localStorage.setItem(chatUnreadStorageKey, lastReadAt);
+    }
+    const unreadCount = !drawer.classList.contains("is-open") && lastReadAt
+      ? readableMessages.filter(message => new Date(message.created_at) > new Date(lastReadAt)).length
+      : 0;
+    unreadBadge.textContent = unreadCount > 9 ? "9+" : String(unreadCount || "");
+    unreadBadge.classList.toggle("is-visible", unreadCount > 0);
+    chatButton.setAttribute("aria-label", unreadCount
+      ? `Open team chat, ${unreadCount} unread message${unreadCount === 1 ? "" : "s"}`
+      : "Open team chat");
   }
 
   function renderPublicMessages(messages) {

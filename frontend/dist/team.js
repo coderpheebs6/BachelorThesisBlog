@@ -61,6 +61,7 @@ let chatPostsLoading = null;
 let chatPostsError = null;
 let chatCommandSelection = 0;
 let editingAttachments = [];
+const chatUnreadStoragePrefix = "fieldnotes-chat-read:";
 
 function getChatInputText() {
   return teamChatInput.textContent;
@@ -295,13 +296,32 @@ teamChatMessages.addEventListener("click", async event => {
 async function renderChatMessagesFromDatabase() {
   try {
     const messages = await window.fieldnotesData.getChatMessages();
-    const latestMessage = messages[messages.length - 1];
+    const session = await window.fieldnotesData.getSession();
+    const currentUserId = session?.user?.id;
+    const readableMessages = messages.filter(message => message.author_id !== currentUserId);
+    const latestMessage = readableMessages[readableMessages.length - 1];
     const isChatOpen = teamChatSection.classList.contains("is-open");
-    if (!hasLoadedChatMessages && latestMessage) latestSeenChatMessage = latestMessage.created_at;
-    if (isChatOpen && latestMessage) latestSeenChatMessage = latestMessage.created_at;
-    const hasUnread = hasLoadedChatMessages && !isChatOpen && latestMessage
-      && latestMessage.created_at > latestSeenChatMessage;
-    chatToggleButton.querySelector(".chat-unread-badge")?.classList.toggle("is-visible", Boolean(hasUnread));
+    const storageKey = currentUserId ? `${chatUnreadStoragePrefix}${currentUserId}` : null;
+    let lastReadAt = storageKey ? localStorage.getItem(storageKey) : null;
+    if (!lastReadAt && latestMessage) {
+      lastReadAt = latestMessage.created_at;
+      if (storageKey) localStorage.setItem(storageKey, lastReadAt);
+    }
+    if (isChatOpen && latestMessage) {
+      lastReadAt = latestMessage.created_at;
+      if (storageKey) localStorage.setItem(storageKey, lastReadAt);
+    }
+    const unreadCount = !isChatOpen && lastReadAt
+      ? readableMessages.filter(message => new Date(message.created_at) > new Date(lastReadAt)).length
+      : 0;
+    const unreadBadge = chatToggleButton.querySelector(".chat-unread-badge");
+    if (unreadBadge) {
+      unreadBadge.textContent = unreadCount > 9 ? "9+" : String(unreadCount || "");
+      unreadBadge.classList.toggle("is-visible", unreadCount > 0);
+    }
+    chatToggleButton.setAttribute("aria-label", unreadCount
+      ? `Open team chat, ${unreadCount} unread message${unreadCount === 1 ? "" : "s"}`
+      : "Open team chat");
     hasLoadedChatMessages = true;
     await renderChatMessages(messages);
   } catch (error) {
@@ -722,7 +742,6 @@ function openChat() {
     chatOverlay.classList.add("is-open");
   });
   chatToggleButton.setAttribute("aria-expanded", "true");
-  chatToggleButton.querySelector(".chat-unread-badge")?.classList.remove("is-visible");
   renderChatMessagesFromDatabase();
   document.body.classList.add("chat-is-open");
   teamChatInput.focus();
@@ -903,7 +922,7 @@ teamDrafts.addEventListener("click", async event => {
         attachment_url: draft.attachment_url || null,
         date: new Date().toISOString()
       });
-      await window.fieldnotesData.deleteDraft(draft.id);
+      await window.fieldnotesData.permanentlyDeleteDraft(draft.id);
       await renderTeamDrafts();
       await renderTeamPosts();
       showMessage(teamMessage, "Draft published.");

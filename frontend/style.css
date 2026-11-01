@@ -122,11 +122,16 @@ button, a { -webkit-tap-highlight-color: transparent; }
   position: absolute;
   top: -3px;
   right: -3px;
-  width: 9px;
-  height: 9px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
   border: 2px solid var(--bg);
   border-radius: 50%;
   background: var(--lime);
+  color: var(--bg);
+  font: .58rem var(--mono);
+  line-height: 14px;
+  text-align: center;
   opacity: 0;
   transform: scale(.5);
   pointer-events: none;
