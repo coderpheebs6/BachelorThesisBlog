@@ -99,7 +99,7 @@ async function initPublicNav() {
   const chatButton = publicNavActions.querySelector(".public-chat-button");
   const unreadBadge = chatButton.querySelector(".chat-unread-badge");
   const sessionUserId = session.user.id;
-  const chatUnreadStorageKey = `fieldnotes-chat-read:${sessionUserId}`;
+  const chatUnreadStorageKey = `fieldnotes-chat-read-id:${sessionUserId}`;
   let chatPosts = [];
   let chatPostsLoaded = false;
   let chatPostsLoading = null;
@@ -209,17 +209,17 @@ async function initPublicNav() {
   function updateUnread(messages, markAsRead = false) {
     const readableMessages = messages.filter(message => message.author_id !== sessionUserId);
     const latestMessage = readableMessages[readableMessages.length - 1];
-    let lastReadAt = localStorage.getItem(chatUnreadStorageKey);
-    if (!lastReadAt && latestMessage) {
-      lastReadAt = latestMessage.created_at;
-      localStorage.setItem(chatUnreadStorageKey, lastReadAt);
+    let lastReadId = localStorage.getItem(chatUnreadStorageKey);
+    if (!lastReadId && latestMessage) {
+      lastReadId = String(latestMessage.id);
+      localStorage.setItem(chatUnreadStorageKey, lastReadId);
     }
     if (markAsRead && latestMessage) {
-      lastReadAt = latestMessage.created_at;
-      localStorage.setItem(chatUnreadStorageKey, lastReadAt);
+      lastReadId = String(latestMessage.id);
+      localStorage.setItem(chatUnreadStorageKey, lastReadId);
     }
-    const unreadCount = !drawer.classList.contains("is-open") && lastReadAt
-      ? readableMessages.filter(message => new Date(message.created_at) > new Date(lastReadAt)).length
+    const unreadCount = !drawer.classList.contains("is-open") && lastReadId
+      ? readableMessages.filter(message => Number(message.id) > Number(lastReadId)).length
       : 0;
     unreadBadge.textContent = unreadCount > 9 ? "9+" : String(unreadCount || "");
     unreadBadge.classList.toggle("is-visible", unreadCount > 0);
@@ -309,7 +309,11 @@ async function initPublicNav() {
       formMessage.textContent = `Could not send message: ${error.message}`;
     }
   });
-  window.fieldnotesData.subscribeToChatMessages(renderMessages);
+  await renderMessages();
+  window.fieldnotesData.subscribeToChatMessages(() => {
+    renderMessages();
+    window.setTimeout(renderMessages, 350);
+  });
 }
 
 initPublicNav().catch(error => console.error("Public navigation setup failed", error));

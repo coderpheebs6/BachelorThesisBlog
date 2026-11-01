@@ -61,7 +61,7 @@ let chatPostsLoading = null;
 let chatPostsError = null;
 let chatCommandSelection = 0;
 let editingAttachments = [];
-const chatUnreadStoragePrefix = "fieldnotes-chat-read:";
+const chatUnreadStoragePrefix = "fieldnotes-chat-read-id:";
 
 function getChatInputText() {
   return teamChatInput.textContent;
@@ -302,17 +302,17 @@ async function renderChatMessagesFromDatabase() {
     const latestMessage = readableMessages[readableMessages.length - 1];
     const isChatOpen = teamChatSection.classList.contains("is-open");
     const storageKey = currentUserId ? `${chatUnreadStoragePrefix}${currentUserId}` : null;
-    let lastReadAt = storageKey ? localStorage.getItem(storageKey) : null;
-    if (!lastReadAt && latestMessage) {
-      lastReadAt = latestMessage.created_at;
-      if (storageKey) localStorage.setItem(storageKey, lastReadAt);
+    let lastReadId = storageKey ? localStorage.getItem(storageKey) : null;
+    if (!lastReadId && latestMessage) {
+      lastReadId = String(latestMessage.id);
+      if (storageKey) localStorage.setItem(storageKey, lastReadId);
     }
     if (isChatOpen && latestMessage) {
-      lastReadAt = latestMessage.created_at;
-      if (storageKey) localStorage.setItem(storageKey, lastReadAt);
+      lastReadId = String(latestMessage.id);
+      if (storageKey) localStorage.setItem(storageKey, lastReadId);
     }
-    const unreadCount = !isChatOpen && lastReadAt
-      ? readableMessages.filter(message => new Date(message.created_at) > new Date(lastReadAt)).length
+    const unreadCount = !isChatOpen && lastReadId
+      ? readableMessages.filter(message => Number(message.id) > Number(lastReadId)).length
       : 0;
     const unreadBadge = chatToggleButton.querySelector(".chat-unread-badge");
     if (unreadBadge) {
@@ -669,6 +669,7 @@ async function updateAuthView() {
     if (!unsubscribeChat) {
       unsubscribeChat = window.fieldnotesData.subscribeToChatMessages(() => {
         renderChatMessagesFromDatabase();
+        window.setTimeout(renderChatMessagesFromDatabase, 350);
       });
     }
 
