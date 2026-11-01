@@ -239,6 +239,7 @@ create table if not exists public.team_drafts (
   attachment_type text,
   attachment_url text,
   attachments jsonb not null default '[]'::jsonb,
+  deleted_at timestamptz,
   updated_at timestamptz not null default now()
 );
 
@@ -275,7 +276,8 @@ alter table public.posts
 alter table public.team_drafts
   add column if not exists attachment_type text,
   add column if not exists attachment_url text,
-  add column if not exists attachments jsonb not null default '[]'::jsonb;
+  add column if not exists attachments jsonb not null default '[]'::jsonb,
+  add column if not exists deleted_at timestamptz;
 
 -- Run this to enable the team post recycle bin:
 alter table public.posts

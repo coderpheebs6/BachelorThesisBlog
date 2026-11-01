@@ -302,7 +302,8 @@ window.fieldnotesData = {
       attachment_url: draft.attachment_url,
       attachments: Array.isArray(draft.attachments) ? draft.attachments : [],
       author_id: session.user.id,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      deleted_at: null
     };
     let query = supabaseClient.from("team_drafts");
     const { error } = draftId
