@@ -40,8 +40,8 @@ if (latestContainer) {
 
     if (latestPosts.length) {
       latestContainer.innerHTML = latestPosts.map(post => `
-      <a class="latest-card" href="article.html?id=${encodeURIComponent(post.id)}">
-        <span class="note-tag">${escapeHTML(post.category.map(value => value.toUpperCase()).join(" · "))} / ${formatDate(post.date)}</span>
+      <a class="latest-card" href="article.html?${post.is_draft ? `draft=${encodeURIComponent(post.id)}` : `id=${encodeURIComponent(post.id)}`}">
+        <span class="note-tag">${post.is_draft ? "TEAM DRAFT / " : ""}${escapeHTML(post.category.map(value => value.toUpperCase()).join(" · "))} / ${formatDate(post.date)}</span>
         <h3>${escapeHTML(post.title)}</h3>
         <p>${escapeHTML(post.body.slice(0, 140))}${post.body.length > 140 ? "…" : ""}</p>
         <span class="note-footer">${authorMarkup(post)}<span class="read-more">READ NOTE ↗</span></span>

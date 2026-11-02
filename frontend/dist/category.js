@@ -106,8 +106,8 @@ async function renderCategory() {
   }
 
   container.innerHTML = posts.map(post => `
-    <a class="latest-card" href="article.html?id=${encodeURIComponent(post.id)}">
-      <span class="note-tag">${escapeHTML(categoryLabels(post.category))} / ${formatDate(post.date)}</span>
+    <a class="latest-card" href="article.html?${post.is_draft ? `draft=${encodeURIComponent(post.id)}` : `id=${encodeURIComponent(post.id)}`}">
+      <span class="note-tag">${post.is_draft ? "TEAM DRAFT / " : ""}${escapeHTML(categoryLabels(post.category))} / ${formatDate(post.date)}</span>
       <h3>${escapeHTML(post.title)}</h3>
       <p>${escapeHTML(post.body.slice(0, 140))}${post.body.length > 140 ? "…" : ""}</p>
       <span class="note-footer">${authorMarkup(post)}<span class="read-more">READ NOTE ↗</span></span>
@@ -129,10 +129,16 @@ async function renderArticle() {
   const container = document.getElementById("article-content");
   if (!container) return;
 
-  const id = new URLSearchParams(window.location.search).get("id");
+  const searchParams = new URLSearchParams(window.location.search);
+  const id = searchParams.get("id");
+  const draftId = searchParams.get("draft");
   let post;
+  let isDraft = false;
   try {
-    post = (await window.fieldnotesData.getPosts()).find(item => String(item.id) === id);
+    post = draftId
+      ? await window.fieldnotesData.getDraft(draftId)
+      : (await window.fieldnotesData.getPosts()).find(item => String(item.id) === id);
+    isDraft = Boolean(draftId && post);
   } catch {
     container.innerHTML = `<p class="empty-state">The archive is temporarily unavailable.</p>`;
     return;
@@ -150,19 +156,37 @@ async function renderArticle() {
   document.title = `${post.title} — Devine thesis`;
 
   const backLink = document.getElementById("back-link");
-  if (backLink) backLink.href = `${post.category[0] || "ux"}.html`;
+  if (backLink) backLink.href = isDraft ? "team.html" : `${post.category[0] || "ux"}.html`;
 
   container.innerHTML = `
-    <p class="eyebrow note-heading"><span class="note-icon" aria-hidden="true"></span>PROCESS BLOG / ${escapeHTML(categoryLabels(post.category))}</p>
-    <p class="article-date">${formatDate(post.date)} · ${escapeHTML(categoryLabels(post.category))}</p>
+    <p class="eyebrow note-heading"><span class="note-icon" aria-hidden="true"></span>${isDraft ? "DRAFT / TEAM ONLY" : `PROCESS BLOG / ${escapeHTML(categoryLabels(post.category))}`}</p>
+    <p class="article-date">${formatDate(post.date || post.updated_at)} · ${escapeHTML(categoryLabels(post.category))}</p>
     <div class="article-author">${authorMarkup(post)}</div>
     <h1>${escapeHTML(post.title)}</h1>
+    ${isDraft ? `<div class="article-draft-banner"><span>This draft is only visible to logged-in team members.</span><button id="publish-draft-button" class="submit-button" type="button">PUBLISH DRAFT <span>↗</span></button><p id="draft-message" class="form-message" aria-live="polite"></p></div>` : ""}
     <div class="article-body">${escapeHTML(post.body)}</div>
     ${mediaAttachmentsMarkup(post)}
     ${post.conclusion ? `<aside class="article-takeaway"><span class="takeaway-icon" aria-hidden="true"></span><div class="takeaway-copy"><span class="eyebrow">KEY TAKEAWAY</span><p>${escapeHTML(post.conclusion)}</p></div></aside>` : ""}
     ${post.ai_usage ? `<aside class="article-ai"><span class="ai-icon" aria-hidden="true">✦</span><div><span class="eyebrow">AI USE</span><p>${escapeHTML(post.ai_usage)}</p></div></aside>` : ""}
     ${linkAttachmentsMarkup(post)}
   `;
+
+  if (isDraft) {
+    document.getElementById("publish-draft-button").addEventListener("click", async event => {
+      const button = event.currentTarget;
+      const message = document.getElementById("draft-message");
+      button.disabled = true;
+      message.textContent = "Publishing...";
+      try {
+        const publishedPost = await window.fieldnotesData.publishDraft(post.id);
+        window.location.href = `article.html?id=${encodeURIComponent(publishedPost.id)}`;
+      } catch (error) {
+        button.disabled = false;
+        message.textContent = `Could not publish the draft: ${error.message}`;
+        console.error("Publishing draft from article failed", error);
+      }
+    });
+  }
 
   if (window.gsap && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     gsap.from("#article-content > *", {

@@ -777,6 +777,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .save-draft-button { justify-self: start; padding: 8px 0; }
 .text-button { border: 0; background: none; color: var(--muted); cursor: pointer; font: inherit; text-decoration: underline; white-space: nowrap; }
 .text-button:hover { color: var(--lime); }
+.article-draft-banner { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin: 28px 0; padding: 18px; border: 1px solid var(--blue); background: rgba(91, 174, 255, .08); color: var(--muted); font-size: .86rem; }
+.article-draft-banner .submit-button { width: auto; min-height: 42px; margin: 0; padding: 0 16px; }
+.article-draft-banner .form-message { flex-basis: 100%; margin: 0; }
 .team-content-section { margin-top: 58px; }
 .team-drafts-section { padding-top: 32px; border-top: 1px solid var(--line); }
 .team-content-heading { display: flex; justify-content: space-between; gap: 20px; }
@@ -799,6 +802,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .team-post-status { padding: 4px 6px; border: 1px solid currentColor; font-size: .55rem; }
 .team-post-status.is-published { color: var(--lime); }
 .team-post-status.is-draft { color: var(--blue); }
+.team-post-status.is-shared-draft { color: var(--lime); }
 .team-post-actions { display: flex; justify-content: flex-end; gap: 16px; align-items: center; padding-top: 14px; border-top: 1px solid var(--line); flex-shrink: 0; }
 .cancel-edit-button { justify-self: start; }
 .profile-form { width: 100%; border-top: 1px solid var(--line); padding: 28px 0 0; margin: 42px 0 58px; display: grid; gap: 10px; }

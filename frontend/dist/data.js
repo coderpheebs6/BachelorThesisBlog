@@ -32,10 +32,30 @@ window.fieldnotesData = {
 
     if (error) throw error;
 
-    const authorIds = [...new Set((data || []).map(post => post.author_id).filter(Boolean))];
-    if (!authorIds.length) {
-      return (data || []).map(post => ({ ...post, attachments: normalizeAttachments(post) }));
+    let posts = (data || []).map(post => ({ ...post, attachments: normalizeAttachments(post) }));
+    const session = await this.getSession();
+    if (session && !includeDeleted) {
+      const { data: sharedDrafts, error: draftError } = await supabaseClient
+        .from("team_drafts")
+        .select("id, category, title, body, conclusion, ai_usage, attachment_type, attachment_url, attachments, author_id, is_shared, updated_at, deleted_at")
+        .eq("is_shared", true)
+        .is("deleted_at", null)
+        .order("updated_at", { ascending: false });
+      if (draftError) throw draftError;
+      posts = [
+        ...posts,
+        ...(sharedDrafts || []).map(draft => ({
+          ...draft,
+          date: draft.updated_at,
+          is_draft: true,
+          category: normalizeCategories(draft.category),
+          attachments: normalizeAttachments(draft)
+        }))
+      ];
     }
+
+    const authorIds = [...new Set(posts.map(post => post.author_id).filter(Boolean))];
+    if (!authorIds.length) return posts;
 
     const { data: profiles, error: profileError } = await supabaseClient
       .from("profiles")
@@ -45,7 +65,8 @@ window.fieldnotesData = {
     if (profileError) throw profileError;
     const profileById = new Map((profiles || []).map(profile => [profile.id, profile]));
 
-    return (data || []).map(post => {
+    return posts
+      .map(post => {
       const profile = profileById.get(post.author_id);
       return {
         ...post,
@@ -54,7 +75,8 @@ window.fieldnotesData = {
         author_avatar: profile?.avatar_url || post.author_avatar,
         attachments: normalizeAttachments(post)
       };
-    });
+      })
+      .sort((first, second) => new Date(second.date) - new Date(first.date));
   },
   async addPost(post) {
     if (!supabaseClient) throw new Error("Supabase is not configured.");
@@ -263,9 +285,9 @@ window.fieldnotesData = {
 
     if (error) throw error;
   },
-  async getDraft() {
+  async getDraft(id = null) {
     const drafts = await this.getDrafts();
-    return drafts[0] || null;
+    return id === null ? drafts[0] || null : drafts.find(draft => String(draft.id) === String(id)) || null;
   },
   async getDrafts(includeDeleted = false) {
     if (!supabaseClient) return [];
@@ -274,8 +296,8 @@ window.fieldnotesData = {
 
     let draftsQuery = supabaseClient
       .from("team_drafts")
-      .select("id, category, title, body, conclusion, ai_usage, attachment_type, attachment_url, attachments, author_id, updated_at, deleted_at")
-      .eq("author_id", session.user.id);
+      .select("id, category, title, body, conclusion, ai_usage, attachment_type, attachment_url, attachments, author_id, is_shared, updated_at, deleted_at")
+      .or(`author_id.eq.${session.user.id},is_shared.eq.true`);
     if (!includeDeleted) draftsQuery = draftsQuery.is("deleted_at", null);
     const { data, error } = await draftsQuery.order("updated_at", { ascending: false });
 
@@ -302,6 +324,7 @@ window.fieldnotesData = {
       attachment_url: draft.attachment_url,
       attachments: Array.isArray(draft.attachments) ? draft.attachments : [],
       author_id: session.user.id,
+      is_shared: Boolean(draft.is_shared),
       updated_at: new Date().toISOString(),
       deleted_at: null
     };
@@ -311,6 +334,42 @@ window.fieldnotesData = {
       : await query.insert(draftValues);
 
     if (error) throw error;
+  },
+  async publishDraft(id) {
+    if (!supabaseClient) throw new Error("Supabase is not configured.");
+    const session = await this.getSession();
+    if (!session?.user?.id) throw new Error("You must be logged in.");
+
+    const draft = await this.getDraft(id);
+    if (!draft) throw new Error("Draft not found or you do not have access to it.");
+
+    const { data, error } = await supabaseClient
+      .from("posts")
+      .insert({
+        category: draft.category,
+        title: draft.title,
+        body: draft.body,
+        conclusion: draft.conclusion,
+        ai_usage: draft.ai_usage,
+        attachment_type: draft.attachment_type || null,
+        attachment_url: draft.attachment_url || null,
+        attachments: draft.attachments || [],
+        author_id: draft.author_id,
+        date: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    const { error: deleteError } = await supabaseClient
+      .from("team_drafts")
+      .delete()
+      .eq("id", id)
+      .or(`author_id.eq.${session.user.id},is_shared.eq.true`);
+    if (deleteError) throw deleteError;
+
+    return { ...data, category: normalizeCategories(data.category), attachments: normalizeAttachments(data) };
   },
   async deleteDraft(id) {
     if (!supabaseClient) throw new Error("Supabase is not configured.");

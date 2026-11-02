@@ -63,7 +63,14 @@ using (true);
 5. Publiceer opnieuw naar GitHub Pages. Bezoekers gebruiken de gewone site;
    teamleden openen `team.html`.
 
-### Profielen en conclusies
+### Drafts, profielen en conclusies
+
+Teamleden kunnen in `team.html` een note **PUBLISH AS DRAFT**. Een draft wordt
+alleen uit `team_drafts` gelezen voor de ingelogde auteur en verschijnt dus niet
+op de publieke homepage, categoriepagina's of in publieke zoekresultaten. Vanuit
+de draftkaart op de profielpagina of vanuit de draft-detailpagina kan een
+teamlid **PUBLISH DRAFT** kiezen. Daarna wordt de note naar `posts` gekopieerd,
+verdwijnt de draft en is de gepubliceerde note zichtbaar voor bezoekers.
 
 Voer na het aanmaken van de tabel deze eenmalige migratie uit. De auteur wordt
 automatisch gekoppeld aan het ingelogde Supabase-account; teamleden hoeven bij
@@ -223,9 +230,12 @@ using (auth.uid() = author_id)
 
 ### Team drafts
 
-Iedere teamgenoot kan meerdere eigen drafts bewaren. Drafts blijven bestaan wanneer
-een andere note gepubliceerd wordt en worden alleen verwijderd wanneer je ze zelf
-verwijdert.
+Iedere teamgenoot kan meerdere drafts bewaren. **SAVE DRAFT** bewaart een private
+draft die alleen op het eigen profiel zichtbaar is. **PUBLISH AS DRAFT** deelt de
+draft met ingelogde teamleden, maar niet met publieke bezoekers. Vanuit de draft
+detailpagina kan een teamlid de draft daarna publiceren. Drafts blijven bestaan
+wanneer een andere note gepubliceerd wordt en worden alleen verwijderd wanneer ze
+gepubliceerd of verwijderd worden.
 
 ```sql
 create table if not exists public.team_drafts (
@@ -239,17 +249,42 @@ create table if not exists public.team_drafts (
   attachment_type text,
   attachment_url text,
   attachments jsonb not null default '[]'::jsonb,
+  is_shared boolean not null default false,
   deleted_at timestamptz,
   updated_at timestamptz not null default now()
 );
 
 alter table public.team_drafts enable row level security;
 
+drop policy if exists "Users manage their own draft" on public.team_drafts;
+drop policy if exists "Users read own and shared drafts" on public.team_drafts;
+drop policy if exists "Users update their own draft" on public.team_drafts;
+drop policy if exists "Team can delete drafts" on public.team_drafts;
+
+create policy "Users read own and shared drafts"
+on public.team_drafts for select
+to authenticated
+using (auth.uid() = author_id or is_shared = true);
+
 create policy "Users manage their own draft"
-on public.team_drafts for all
+on public.team_drafts for insert
+to authenticated
+with check (auth.uid() = author_id);
+
+create policy "Users update their own draft"
+on public.team_drafts for update
 to authenticated
 using (auth.uid() = author_id)
 with check (auth.uid() = author_id);
+
+create policy "Team can delete drafts"
+on public.team_drafts for delete
+to authenticated
+using (auth.uid() = author_id or is_shared = true);
+
+-- Run this when upgrading an existing team_drafts table:
+alter table public.team_drafts
+  add column if not exists is_shared boolean not null default false;
 
 -- Run this when upgrading an existing team_drafts table:
 alter table public.team_drafts

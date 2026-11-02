@@ -41,6 +41,7 @@ const teamChatForm = document.getElementById("team-chat-form");
 const teamChatInput = document.getElementById("team-chat-input");
 const chatMessage = document.getElementById("chat-message");
 const saveDraftButton = document.getElementById("save-draft-button");
+const publishDraftButton = document.getElementById("publish-draft-button");
 const chatToggleButton = document.getElementById("chat-toggle-button");
 const teamChatSection = document.getElementById("team-chat-section");
 const closeChatButton = document.getElementById("close-chat-button");
@@ -534,25 +535,26 @@ async function loadDraft() {
 
 async function renderTeamDrafts() {
   try {
+    const session = await window.fieldnotesData.getSession();
     const drafts = await window.fieldnotesData.getDrafts();
     ownDraftsById.clear();
     drafts.forEach(draft => ownDraftsById.set(String(draft.id), draft));
     teamDrafts.innerHTML = drafts.length
       ? drafts.map(draft => `
         <article class="team-post team-draft" data-id="${escapeHTML(draft.id)}">
-          <div class="team-post-content">
+          <a class="team-post-content" href="article.html?draft=${encodeURIComponent(draft.id)}">
             <div class="team-post-meta">
               <span class="team-post-category">${escapeHTML(draft.category.join(" · ").toUpperCase())}</span>
-              <span class="team-post-status is-draft">DRAFT</span>
+              <span class="team-post-status ${draft.is_shared ? "is-shared-draft" : "is-draft"}">${draft.is_shared ? "TEAM DRAFT" : "PRIVATE DRAFT"}</span>
               <time>${formatDate(draft.updated_at)}</time>
             </div>
             <h2>${escapeHTML(draft.title || "Untitled draft")}</h2>
             <p class="team-post-excerpt">${escapeHTML(draft.body?.slice(0, 120) || "No note content yet.")}</p>
-          </div>
+          </a>
           <div class="team-post-actions">
-            <button class="text-button edit-team-draft" data-id="${escapeHTML(draft.id)}" type="button">EDIT</button>
-          <button class="text-button publish-team-draft" data-id="${escapeHTML(draft.id)}" type="button">PUBLISH</button>
-          <button class="text-button delete-team-draft" data-id="${escapeHTML(draft.id)}" type="button">DELETE</button>
+            ${draft.author_id === session?.user?.id ? `<button class="text-button edit-team-draft" data-id="${escapeHTML(draft.id)}" type="button">EDIT</button>` : ""}
+            <button class="text-button publish-team-draft" data-id="${escapeHTML(draft.id)}" type="button">PUBLISH</button>
+            ${draft.author_id === session?.user?.id ? `<button class="text-button delete-team-draft" data-id="${escapeHTML(draft.id)}" type="button">DELETE</button>` : ""}
           </div>
         </article>
       `).join("")
@@ -585,7 +587,7 @@ async function renderTeamPosts() {
     const session = await window.fieldnotesData.getSession();
     if (!session) return;
     const posts = await window.fieldnotesData.getPosts();
-    const ownPosts = posts.filter(post => post.author_id === session.user.id);
+    const ownPosts = posts.filter(post => post.author_id === session.user.id && !post.is_draft);
     ownPostsById.clear();
     ownPosts.forEach(post => ownPostsById.set(String(post.id), post));
     teamPosts.innerHTML = ownPosts.length
@@ -869,15 +871,15 @@ attachmentList.addEventListener("click", event => {
   renderAttachmentList();
 });
 
-saveDraftButton.addEventListener("click", async () => {
-  showMessage(teamMessage, "Saving draft...");
+async function saveDraft(isShared) {
+  showMessage(teamMessage, isShared ? "Publishing draft to the team..." : "Saving private draft...");
   try {
     const draft = getNoteFormValues();
     if (!draft.title && !draft.body && !draft.conclusion && !draft.ai_usage && !draft.attachments.length) {
       showMessage(teamMessage, "Add some content before saving a draft.");
       return;
     }
-    await window.fieldnotesData.saveDraft({ ...draft, id: editingDraftId });
+    await window.fieldnotesData.saveDraft({ ...draft, id: editingDraftId, is_shared: isShared });
     teamForm.reset();
     resetCategoryPicker();
     editingPostId = null;
@@ -886,13 +888,16 @@ saveDraftButton.addEventListener("click", async () => {
     noteFormLabel.textContent = "01 / WRITE THE NOTE";
     noteSubmitButton.innerHTML = "PUBLISH NOTE <span>↗</span>";
     cancelEditButton.hidden = true;
-    showMessage(teamMessage, "Draft saved.");
+    showMessage(teamMessage, isShared ? "Draft published to the team." : "Draft saved privately.");
     await renderTeamDrafts();
   } catch (error) {
-    showMessage(teamMessage, `Could not save your draft: ${error.message}`);
-    console.error("Saving draft failed", error);
+    showMessage(teamMessage, `Could not ${isShared ? "publish" : "save"} the draft: ${error.message}`);
+    console.error(isShared ? "Publishing team draft failed" : "Saving private draft failed", error);
   }
-});
+}
+
+saveDraftButton.addEventListener("click", () => saveDraft(false));
+publishDraftButton.addEventListener("click", () => saveDraft(true));
 
 teamDrafts.addEventListener("click", async event => {
   const editButton = event.target.closest(".edit-team-draft");
@@ -912,18 +917,7 @@ teamDrafts.addEventListener("click", async event => {
     const draft = ownDraftsById.get(String(publishButton.dataset.id));
     if (!draft) return;
     try {
-      await window.fieldnotesData.addPost({
-        category: draft.category,
-        title: draft.title,
-        body: draft.body,
-        conclusion: draft.conclusion,
-        ai_usage: draft.ai_usage,
-        attachments: draft.attachments || [],
-        attachment_type: draft.attachment_type || null,
-        attachment_url: draft.attachment_url || null,
-        date: new Date().toISOString()
-      });
-      await window.fieldnotesData.permanentlyDeleteDraft(draft.id);
+      await window.fieldnotesData.publishDraft(draft.id);
       await renderTeamDrafts();
       await renderTeamPosts();
       showMessage(teamMessage, "Draft published.");
