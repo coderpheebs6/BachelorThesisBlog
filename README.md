@@ -179,6 +179,15 @@ to authenticated
 using (true)
 with check (true);
 
+Gepubliceerde posts kunnen door de auteur rechtstreeks op de detailpagina
+worden aangepast via **EDIT POST**. De knop is alleen zichtbaar voor de
+ingelogde auteur; de profielpagina blijft hiervoor ongewijzigd.
+
+In het note-veld zijn ook rich-text tools beschikbaar voor H1-H4, vet, cursief,
+onderstrepen en drie highlightkleuren. Dezelfde toolbar verschijnt bij het
+bewerken van een gepubliceerde post op de detailpagina. Alleen deze beperkte
+opmaak wordt opgeslagen; overige HTML wordt verwijderd.
+
 drop policy if exists "Team can delete posts" on public.posts;
 create policy "Team can delete posts"
 on public.posts for delete
@@ -236,6 +245,43 @@ draft met ingelogde teamleden, maar niet met publieke bezoekers. Vanuit de draft
 detailpagina kan een teamlid de draft daarna publiceren. Drafts blijven bestaan
 wanneer een andere note gepubliceerd wordt en worden alleen verwijderd wanneer ze
 gepubliceerd of verwijderd worden.
+
+#### Bestaande Supabase-database upgraden
+
+Voer onderstaande migratie uit in Supabase **SQL Editor**. Zonder deze kolom en
+policy kan een teamlid alleen zijn eigen drafts zien; gedeelde drafts verschijnen
+dan niet op de homepage of op de UX-, Design- en Code-pagina's.
+
+```sql
+alter table public.team_drafts
+  add column if not exists is_shared boolean not null default false;
+
+drop policy if exists "Users manage their own draft" on public.team_drafts;
+drop policy if exists "Users read own and shared drafts" on public.team_drafts;
+drop policy if exists "Users update their own draft" on public.team_drafts;
+drop policy if exists "Team can delete drafts" on public.team_drafts;
+
+create policy "Users read own and shared drafts"
+on public.team_drafts for select
+to authenticated
+using (auth.uid() = author_id or is_shared = true);
+
+create policy "Users manage their own draft"
+on public.team_drafts for insert
+to authenticated
+with check (auth.uid() = author_id);
+
+create policy "Users update their own draft"
+on public.team_drafts for update
+to authenticated
+using (auth.uid() = author_id)
+with check (auth.uid() = author_id);
+
+create policy "Team can delete drafts"
+on public.team_drafts for delete
+to authenticated
+using (auth.uid() = author_id or is_shared = true);
+```
 
 ```sql
 create table if not exists public.team_drafts (

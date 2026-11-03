@@ -4,6 +4,7 @@ const loginForm = document.getElementById("login-form");
 const teamForm = document.getElementById("team-form");
 const loginMessage = document.getElementById("login-message");
 const teamMessage = document.getElementById("team-message");
+const noteEditor = document.getElementById("body");
 const teamPosts = document.getElementById("team-posts");
 const teamDrafts = document.getElementById("team-drafts");
 const teamDeletedPosts = document.getElementById("team-deleted-posts");
@@ -478,7 +479,7 @@ function getNoteFormValues() {
   return {
     category: [...categoryPicker.querySelectorAll(".category-option.is-selected")].map(button => button.dataset.category),
     title: document.getElementById("title").value.trim(),
-    body: document.getElementById("body").value.trim(),
+    body: sanitizeRichText(noteEditor.innerHTML).trim(),
     conclusion: document.getElementById("conclusion").value.trim() || null,
     ai_usage: document.getElementById("ai-usage").value.trim() || null,
     attachments: [...editingAttachments],
@@ -496,7 +497,7 @@ function fillNoteForm(note) {
     button.setAttribute("aria-pressed", String(selected));
   });
   document.getElementById("title").value = note.title || "";
-  document.getElementById("body").value = note.body || "";
+  noteEditor.innerHTML = sanitizeRichText(note.body || "");
   document.getElementById("conclusion").value = note.conclusion || "";
   document.getElementById("ai-usage").value = note.ai_usage || "";
   attachmentLinkInput.value = "";
@@ -505,6 +506,8 @@ function fillNoteForm(note) {
   attachmentVideosInput.value = "";
   renderAttachmentList();
 }
+
+setupRichTextToolbar(document.querySelector(".rich-text-toolbar"), noteEditor);
 
 function resetCategoryPicker() {
   categoryPicker.querySelectorAll(".category-option").forEach(button => {
@@ -804,6 +807,7 @@ teamForm.addEventListener("submit", async event => {
       showMessage(teamMessage, "Note published.");
     }
     teamForm.reset();
+    noteEditor.replaceChildren();
     resetCategoryPicker();
     await renderTeamPosts();
     await renderTeamDrafts();
@@ -881,6 +885,7 @@ async function saveDraft(isShared) {
     }
     await window.fieldnotesData.saveDraft({ ...draft, id: editingDraftId, is_shared: isShared });
     teamForm.reset();
+    noteEditor.replaceChildren();
     resetCategoryPicker();
     editingPostId = null;
     editingDraftId = null;

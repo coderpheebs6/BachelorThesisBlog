@@ -565,6 +565,15 @@ button, a { -webkit-tap-highlight-color: transparent; }
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+.article-edit-actions { display: flex; justify-content: flex-end; margin-top: 20px; }
+.article-edit-form { display: grid; gap: 10px; margin: 20px 0 34px; padding: 22px; border: 1px solid var(--line); background: var(--surface); }
+.article-edit-form[hidden] { display: none; }
+.article-edit-form input, .article-edit-form textarea { width: 100%; padding: 13px 14px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; outline: 0; resize: vertical; }
+.article-edit-form input:focus, .article-edit-form textarea:focus { border-color: var(--lime); }
+.article-edit-form label { margin-top: 5px; color: var(--muted); font: .67rem var(--mono); letter-spacing: .07em; }
+.article-edit-form-actions { display: flex; align-items: center; gap: 18px; margin-top: 8px; }
+.article-edit-form-actions .submit-button { margin: 0; }
+.article-edit-form .form-message { margin: 0; }
 .post-attachment { margin: 32px 0 0; }
 .post-attachment + .post-attachment { margin-top: 18px; }
 .post-attachment img, .post-attachment video { display: block; width: 100%; max-height: 620px; object-fit: contain; border: 1px solid var(--line); background: var(--bg); }
@@ -698,6 +707,53 @@ button, a { -webkit-tap-highlight-color: transparent; }
   resize: none;
   line-height: 1.55;
 }
+.team-form #body {
+  min-height: 240px;
+}
+.rich-text-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  background: var(--surface-hover);
+}
+.rich-text-toolbar button {
+  min-width: 32px;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  font: .7rem var(--mono);
+}
+.rich-text-toolbar button:hover { border-color: var(--lime); color: var(--lime); }
+.toolbar-divider { width: 1px; margin: 0 4px; background: var(--line); }
+.highlight-yellow { color: #fff176 !important; }
+.highlight-pink { color: #f1a7c5 !important; }
+.highlight-blue { color: #8ed8ff !important; }
+.highlight-green { color: #d8f36a !important; }
+.highlight-none { margin-left: auto; color: var(--muted) !important; font-size: 1rem !important; }
+.highlight-none:hover { color: var(--lime) !important; }
+.rich-text-editor {
+  min-height: 240px;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  line-height: 1.55;
+  outline: 0;
+  overflow-wrap: anywhere;
+}
+.rich-text-editor:focus { border-color: var(--lime); background: var(--surface-hover); }
+.rich-text-editor:empty::before { content: attr(data-placeholder); color: var(--muted); pointer-events: none; }
+.rich-text-editor h1, .rich-text-editor h2, .rich-text-editor h3, .rich-text-editor h4 { margin: .5em 0; line-height: 1.1; }
+.rich-text-editor span[style*="background-color"] { color: #171714 !important; }
+.article-body span[style*="background-color"], .preview-body span[style*="background-color"] { color: #171714 !important; }
+.article-edit-form .rich-text-editor { min-height: 300px; background: var(--bg); }
+.article-edit-form .article-rich-text-toolbar { position: sticky; top: 18px; z-index: 3; }
 .team-form input:focus, .team-form textarea:focus, .team-form select:focus {
   border-color: var(--lime);
   background: var(--surface-hover);

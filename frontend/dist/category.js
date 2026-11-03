@@ -109,7 +109,7 @@ async function renderCategory() {
     <a class="latest-card" href="article.html?${post.is_draft ? `draft=${encodeURIComponent(post.id)}` : `id=${encodeURIComponent(post.id)}`}">
       <span class="note-tag">${post.is_draft ? "TEAM DRAFT / " : ""}${escapeHTML(categoryLabels(post.category))} / ${formatDate(post.date)}</span>
       <h3>${escapeHTML(post.title)}</h3>
-      <p>${escapeHTML(post.body.slice(0, 140))}${post.body.length > 140 ? "…" : ""}</p>
+      <p>${escapeHTML(richTextPlainText(post.body).slice(0, 140))}${richTextPlainText(post.body).length > 140 ? "…" : ""}</p>
       <span class="note-footer">${authorMarkup(post)}<span class="read-more">READ NOTE ↗</span></span>
     </a>
   `).join("");
@@ -134,11 +134,14 @@ async function renderArticle() {
   const draftId = searchParams.get("draft");
   let post;
   let isDraft = false;
+  let canEdit = false;
   try {
     post = draftId
       ? await window.fieldnotesData.getDraft(draftId)
       : (await window.fieldnotesData.getPosts()).find(item => String(item.id) === id);
     isDraft = Boolean(draftId && post);
+    const session = await window.fieldnotesData.getSession();
+    canEdit = Boolean(session?.user?.id && !isDraft && session.user.id === post.author_id);
   } catch {
     container.innerHTML = `<p class="empty-state">The archive is temporarily unavailable.</p>`;
     return;
@@ -164,12 +167,61 @@ async function renderArticle() {
     <div class="article-author">${authorMarkup(post)}</div>
     <h1>${escapeHTML(post.title)}</h1>
     ${isDraft ? `<div class="article-draft-banner"><span>This draft is only visible to logged-in team members.</span><button id="publish-draft-button" class="submit-button" type="button">PUBLISH DRAFT <span>↗</span></button><p id="draft-message" class="form-message" aria-live="polite"></p></div>` : ""}
-    <div class="article-body">${escapeHTML(post.body)}</div>
+    ${canEdit ? `<div class="article-edit-actions"><button id="edit-post-button" class="text-button" type="button">EDIT POST</button></div><form id="article-edit-form" class="article-edit-form" hidden>
+      <label for="edit-post-title">TITLE</label>
+      <input id="edit-post-title" type="text" maxlength="80" required value="${escapeHTML(post.title)}">
+      <label for="edit-post-body">YOUR NOTE</label>
+      <div class="rich-text-toolbar article-rich-text-toolbar" aria-label="Text formatting"><button type="button" data-command="clearHighlight" aria-label="Remove highlight">×</button><button type="button" data-command="formatBlock" data-value="h1">H1</button><button type="button" data-command="formatBlock" data-value="h2">H2</button><button type="button" data-command="formatBlock" data-value="h3">H3</button><button type="button" data-command="formatBlock" data-value="h4">H4</button><button type="button" data-command="bold"><strong>B</strong></button><button type="button" data-command="italic"><em>I</em></button><button type="button" data-command="underline"><u>U</u></button><span class="toolbar-divider"></span><button type="button" class="highlight-yellow" data-command="hiliteColor" data-value="#fff176">●</button><button type="button" class="highlight-pink" data-command="hiliteColor" data-value="#f1a7c5">●</button><button type="button" class="highlight-blue" data-command="hiliteColor" data-value="#8ed8ff">●</button><button type="button" class="highlight-green" data-command="hiliteColor" data-value="#d8f36a">●</button></div>
+      <div id="edit-post-body" class="rich-text-editor" contenteditable="true" role="textbox" aria-multiline="true">${sanitizeRichText(post.body)}</div>
+      <label for="edit-post-conclusion">KEY TAKEAWAY <span class="optional">(optional)</span></label>
+      <textarea id="edit-post-conclusion" rows="3" maxlength="240">${escapeHTML(post.conclusion || "")}</textarea>
+      <label for="edit-post-ai">AI USE <span class="optional">(optional)</span></label>
+      <textarea id="edit-post-ai" rows="4" maxlength="500">${escapeHTML(post.ai_usage || "")}</textarea>
+      <div class="article-edit-form-actions"><button class="submit-button" type="submit">SAVE CHANGES <span>↗</span></button><button id="cancel-post-edit-button" class="text-button" type="button">CANCEL</button></div>
+      <p id="post-edit-message" class="form-message" aria-live="polite"></p>
+    </form>` : ""}
+    <div class="article-body">${sanitizeRichText(post.body)}</div>
     ${mediaAttachmentsMarkup(post)}
     ${post.conclusion ? `<aside class="article-takeaway"><span class="takeaway-icon" aria-hidden="true"></span><div class="takeaway-copy"><span class="eyebrow">KEY TAKEAWAY</span><p>${escapeHTML(post.conclusion)}</p></div></aside>` : ""}
     ${post.ai_usage ? `<aside class="article-ai"><span class="ai-icon" aria-hidden="true">✦</span><div><span class="eyebrow">AI USE</span><p>${escapeHTML(post.ai_usage)}</p></div></aside>` : ""}
     ${linkAttachmentsMarkup(post)}
   `;
+
+  if (canEdit) {
+    const editButton = document.getElementById("edit-post-button");
+    const editForm = document.getElementById("article-edit-form");
+    const editMessage = document.getElementById("post-edit-message");
+    const editBody = document.getElementById("edit-post-body");
+    setupRichTextToolbar(document.querySelector(".article-rich-text-toolbar"), editBody);
+    editButton.addEventListener("click", () => {
+      editForm.hidden = false;
+      editButton.hidden = true;
+      editForm.querySelector("input").focus();
+    });
+    document.getElementById("cancel-post-edit-button").addEventListener("click", () => {
+      editForm.hidden = true;
+      editButton.hidden = false;
+    });
+    editForm.addEventListener("submit", async event => {
+      event.preventDefault();
+      const saveButton = editForm.querySelector("button[type=submit]");
+      saveButton.disabled = true;
+      editMessage.textContent = "Saving changes...";
+      try {
+        await window.fieldnotesData.updatePost(post.id, {
+          title: document.getElementById("edit-post-title").value.trim(),
+          body: sanitizeRichText(editBody.innerHTML).trim(),
+          conclusion: document.getElementById("edit-post-conclusion").value.trim() || null,
+          ai_usage: document.getElementById("edit-post-ai").value.trim() || null
+        });
+        window.location.reload();
+      } catch (error) {
+        saveButton.disabled = false;
+        editMessage.textContent = `Could not save changes: ${error.message}`;
+        console.error("Editing published post failed", error);
+      }
+    });
+  }
 
   if (isDraft) {
     document.getElementById("publish-draft-button").addEventListener("click", async event => {

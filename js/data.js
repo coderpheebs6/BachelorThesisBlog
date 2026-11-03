@@ -19,6 +19,60 @@ function normalizeAttachments(post) {
   return post.attachment_url ? [{ type: post.attachment_type || "link", url: post.attachment_url }] : [];
 }
 
+function richTextEscape(value) {
+  return String(value).replace(/[&<>"']/g, char => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+  })[char]);
+}
+
+const richTextTags = new Set(["H1", "H2", "H3", "H4", "P", "BR", "STRONG", "B", "EM", "I", "U", "MARK", "SPAN", "UL", "OL", "LI"]);
+function sanitizeRichText(value) {
+  const source = String(value || "");
+  if (!source.includes("<")) return richTextEscape(source).replace(/\r?\n/g, "<br>");
+  const template = document.createElement("template");
+  template.innerHTML = source;
+  const clean = node => {
+    if (node.nodeType === Node.TEXT_NODE) return richTextEscape(node.textContent);
+    if (node.nodeType !== Node.ELEMENT_NODE) return "";
+    if (!richTextTags.has(node.tagName)) return [...node.childNodes].map(clean).join("");
+    const color = node.style.backgroundColor;
+    const safeColor = /^#[0-9a-f]{6}$/i.test(color) || /^rgb\(\s*\d{1,3},\s*\d{1,3},\s*\d{1,3}\s*\)$/i.test(color);
+    const style = node.tagName === "SPAN" && safeColor
+      ? ` style="background-color:${color};color:#171714"`
+      : "";
+    return `<${node.tagName.toLowerCase()}${style}>${[...node.childNodes].map(clean).join("")}</${node.tagName.toLowerCase()}>`;
+  };
+  return [...template.content.childNodes].map(clean).join("");
+}
+function richTextPlainText(value) {
+  const template = document.createElement("template");
+  template.innerHTML = String(value || "");
+  return template.content.textContent || "";
+}
+function setupRichTextToolbar(toolbar, editor) {
+  if (!toolbar || !editor) return;
+  toolbar.addEventListener("mousedown", event => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    event.preventDefault();
+    editor.focus();
+    if (button.dataset.command === "clearHighlight") {
+      document.execCommand("removeFormat", false);
+      document.execCommand("formatBlock", false, "p");
+      document.execCommand("hiliteColor", false, "transparent");
+      document.execCommand("foreColor", false, "#f5f0e6");
+    } else {
+      document.execCommand(button.dataset.command, false, button.dataset.value || null);
+    }
+    if (button.dataset.command === "hiliteColor") {
+      document.execCommand("foreColor", false, "#171714");
+    }
+  });
+}
+window.sanitizeRichText = sanitizeRichText;
+window.richTextPlainText = richTextPlainText;
+window.setupRichTextToolbar = setupRichTextToolbar;
+
 window.fieldnotesData = {
   configured: supabaseConfigured,
   async getPosts(includeDeleted = false) {
@@ -35,16 +89,10 @@ window.fieldnotesData = {
     let posts = (data || []).map(post => ({ ...post, attachments: normalizeAttachments(post) }));
     const session = await this.getSession();
     if (session && !includeDeleted) {
-      const { data: sharedDrafts, error: draftError } = await supabaseClient
-        .from("team_drafts")
-        .select("id, category, title, body, conclusion, ai_usage, attachment_type, attachment_url, attachments, author_id, is_shared, updated_at, deleted_at")
-        .eq("is_shared", true)
-        .is("deleted_at", null)
-        .order("updated_at", { ascending: false });
-      if (draftError) throw draftError;
+      const sharedDrafts = (await this.getDrafts()).filter(draft => draft.is_shared);
       posts = [
         ...posts,
-        ...(sharedDrafts || []).map(draft => ({
+        ...sharedDrafts.map(draft => ({
           ...draft,
           date: draft.updated_at,
           is_draft: true,
