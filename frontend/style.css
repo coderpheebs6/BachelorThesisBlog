@@ -719,6 +719,18 @@ button, a { -webkit-tap-highlight-color: transparent; }
   border-bottom: 0;
   background: var(--surface-hover);
 }
+.rich-text-editor-wrap.is-long {
+  padding-bottom: var(--rich-toolbar-stop-space, 144px);
+}
+.rich-text-editor-wrap.is-long .team-note-rich-text-toolbar,
+.rich-text-editor-wrap.is-long .article-rich-text-toolbar {
+  position: sticky;
+  top: 16px;
+  z-index: 4;
+}
+.rich-text-editor-wrap {
+  position: relative;
+}
 .rich-text-toolbar button {
   min-width: 32px;
   height: 30px;
@@ -753,7 +765,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .rich-text-editor span[style*="background-color"] { color: #171714 !important; }
 .article-body span[style*="background-color"], .preview-body span[style*="background-color"] { color: #171714 !important; }
 .article-edit-form .rich-text-editor { min-height: 300px; background: var(--bg); }
-.article-edit-form .article-rich-text-toolbar { position: sticky; top: 18px; z-index: 3; }
+.article-edit-form .article-rich-text-toolbar { top: 18px; }
 .team-form input:focus, .team-form textarea:focus, .team-form select:focus {
   border-color: var(--lime);
   background: var(--surface-hover);

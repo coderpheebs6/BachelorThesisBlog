@@ -35,6 +35,7 @@ function sanitizeRichText(value) {
     if (node.nodeType === Node.TEXT_NODE) return richTextEscape(node.textContent);
     if (node.nodeType !== Node.ELEMENT_NODE) return "";
     if (!richTextTags.has(node.tagName)) return [...node.childNodes].map(clean).join("");
+    if (node.tagName === "BR") return "<br>";
     const color = node.style.backgroundColor;
     const safeColor = /^#[0-9a-f]{6}$/i.test(color) || /^rgb\(\s*\d{1,3},\s*\d{1,3},\s*\d{1,3}\s*\)$/i.test(color);
     const style = node.tagName === "SPAN" && safeColor
@@ -51,6 +52,23 @@ function richTextPlainText(value) {
 }
 function setupRichTextToolbar(toolbar, editor) {
   if (!toolbar || !editor) return;
+  const wrapper = toolbar.closest(".rich-text-editor-wrap");
+  const updateStickyState = () => {
+    if (!wrapper) return;
+    const availableHeight = Math.max(window.innerHeight - toolbar.offsetHeight - 80, 320);
+    const isLong = editor.scrollHeight > availableHeight;
+    wrapper.classList.toggle("is-long", isLong);
+    if (isLong) {
+      wrapper.style.setProperty("--rich-toolbar-stop-space", `${toolbar.offsetHeight + 72}px`);
+    } else {
+      wrapper.style.removeProperty("--rich-toolbar-stop-space");
+    }
+  };
+  editor.addEventListener("input", updateStickyState);
+  window.addEventListener("resize", updateStickyState);
+  if (window.ResizeObserver) new ResizeObserver(updateStickyState).observe(editor);
+  requestAnimationFrame(updateStickyState);
+
   toolbar.addEventListener("mousedown", event => {
     const button = event.target.closest("button");
     if (!button) return;
@@ -67,6 +85,7 @@ function setupRichTextToolbar(toolbar, editor) {
     if (button.dataset.command === "hiliteColor") {
       document.execCommand("foreColor", false, "#171714");
     }
+    updateStickyState();
   });
 }
 window.sanitizeRichText = sanitizeRichText;

@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="data.js?v=27" defer></script>
+  <script src="data.js?v=32" defer></script>
   <script src="team.js?v=52" defer></script>
 </head>
 <body class="team-page">
@@ -104,8 +104,10 @@
         <label for="title">TITLE</label>
         <input id="title" type="text" maxlength="80" required>
         <label for="body">YOUR NOTE</label>
-        <div class="rich-text-toolbar" aria-label="Text formatting"><button type="button" data-command="clearHighlight" aria-label="Remove highlight">×</button><button type="button" data-command="formatBlock" data-value="h1">H1</button><button type="button" data-command="formatBlock" data-value="h2">H2</button><button type="button" data-command="formatBlock" data-value="h3">H3</button><button type="button" data-command="formatBlock" data-value="h4">H4</button><button type="button" data-command="bold"><strong>B</strong></button><button type="button" data-command="italic"><em>I</em></button><button type="button" data-command="underline"><u>U</u></button><span class="toolbar-divider"></span><button type="button" class="highlight-yellow" data-command="hiliteColor" data-value="#fff176" aria-label="Highlight yellow">●</button><button type="button" class="highlight-pink" data-command="hiliteColor" data-value="#f1a7c5" aria-label="Highlight pink">●</button><button type="button" class="highlight-blue" data-command="hiliteColor" data-value="#8ed8ff" aria-label="Highlight blue">●</button><button type="button" class="highlight-green" data-command="hiliteColor" data-value="#d8f36a" aria-label="Highlight green">●</button></div>
-        <div id="body" class="rich-text-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Write your note..."></div>
+        <div class="rich-text-editor-wrap">
+          <div class="rich-text-toolbar team-note-rich-text-toolbar" aria-label="Text formatting"><button type="button" data-command="clearHighlight" aria-label="Remove highlight">×</button><button type="button" data-command="formatBlock" data-value="h1">H1</button><button type="button" data-command="formatBlock" data-value="h2">H2</button><button type="button" data-command="formatBlock" data-value="h3">H3</button><button type="button" data-command="formatBlock" data-value="h4">H4</button><button type="button" data-command="bold"><strong>B</strong></button><button type="button" data-command="italic"><em>I</em></button><button type="button" data-command="underline"><u>U</u></button><span class="toolbar-divider"></span><button type="button" class="highlight-yellow" data-command="hiliteColor" data-value="#fff176" aria-label="Highlight yellow">●</button><button type="button" class="highlight-pink" data-command="hiliteColor" data-value="#f1a7c5" aria-label="Highlight pink">●</button><button type="button" class="highlight-blue" data-command="hiliteColor" data-value="#8ed8ff" aria-label="Highlight blue">●</button><button type="button" class="highlight-green" data-command="hiliteColor" data-value="#d8f36a" aria-label="Highlight green">●</button></div>
+          <div id="body" class="rich-text-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Write your note..."></div>
+        </div>
         <label for="conclusion">KEY TAKEAWAY <span class="optional">(optional)</span></label>
         <textarea id="conclusion" rows="3" maxlength="240" placeholder="What should the reader remember?"></textarea>
         <label for="ai-usage">AI USE <span class="optional">(optional)</span></label>
