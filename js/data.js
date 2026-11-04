@@ -26,6 +26,7 @@ function richTextEscape(value) {
 }
 
 const richTextTags = new Set(["H1", "H2", "H3", "H4", "P", "BR", "STRONG", "B", "EM", "I", "U", "MARK", "SPAN", "UL", "OL", "LI"]);
+const richTextColorPattern = /^(?:#[0-9a-f]{3,8}|rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}(?:\s*,\s*(?:0|1|0?\.\d+))?\s*\))$/i;
 function sanitizeRichText(value) {
   const source = String(value || "");
   if (!source.includes("<")) return richTextEscape(source).replace(/\r?\n/g, "<br>");
@@ -34,11 +35,14 @@ function sanitizeRichText(value) {
   const clean = node => {
     if (node.nodeType === Node.TEXT_NODE) return richTextEscape(node.textContent);
     if (node.nodeType !== Node.ELEMENT_NODE) return "";
-    if (!richTextTags.has(node.tagName)) return [...node.childNodes].map(clean).join("");
-    if (node.tagName === "BR") return "<br>";
     const color = node.style.backgroundColor;
-    const safeColor = /^#[0-9a-f]{6}$/i.test(color) || /^rgb\(\s*\d{1,3},\s*\d{1,3},\s*\d{1,3}\s*\)$/i.test(color);
-    const style = node.tagName === "SPAN" && safeColor
+    const safeColor = richTextColorPattern.test(color);
+    if (!richTextTags.has(node.tagName)) {
+      const contents = [...node.childNodes].map(clean).join("");
+      return safeColor ? `<span style="background-color:${color};color:#171714">${contents}</span>` : contents;
+    }
+    if (node.tagName === "BR") return "<br>";
+    const style = safeColor
       ? ` style="background-color:${color};color:#171714"`
       : "";
     return `<${node.tagName.toLowerCase()}${style}>${[...node.childNodes].map(clean).join("")}</${node.tagName.toLowerCase()}>`;
