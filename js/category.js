@@ -176,7 +176,7 @@ async function renderArticle() {
         <div id="edit-post-body" class="rich-text-editor" contenteditable="true" role="textbox" aria-multiline="true">${sanitizeRichText(post.body)}</div>
       </div>
       <label for="edit-post-conclusion">KEY TAKEAWAY <span class="optional">(optional)</span></label>
-      <textarea id="edit-post-conclusion" rows="3" maxlength="240">${escapeHTML(post.conclusion || "")}</textarea>
+      <textarea id="edit-post-conclusion" rows="5" maxlength="500">${escapeHTML(post.conclusion || "")}</textarea>
       <label for="edit-post-ai">AI USE <span class="optional">(optional)</span></label>
       <textarea id="edit-post-ai" rows="4" maxlength="500">${escapeHTML(post.ai_usage || "")}</textarea>
       <div class="article-edit-form-actions"><button class="submit-button" type="submit">SAVE CHANGES <span>↗</span></button><button id="cancel-post-edit-button" class="text-button" type="button">CANCEL</button></div>
