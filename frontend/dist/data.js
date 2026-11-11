@@ -14,9 +14,21 @@ function normalizeCategories(value) {
   return value ? [value] : [];
 }
 
+window.fieldnotesSubcategories = [
+  { value: "expert-desk", label: "Expert desk" },
+  { value: "client", label: "Client" },
+  { value: "progress", label: "Progress" },
+  { value: "testing", label: "Testing" }
+];
+
 function normalizeAttachments(post) {
   if (Array.isArray(post.attachments)) return post.attachments;
   return post.attachment_url ? [{ type: post.attachment_type || "link", url: post.attachment_url }] : [];
+}
+
+function isMissingSubcategoryError(error) {
+  return error?.code === "PGRST204" ||
+    (error?.message || "").toLowerCase().includes("sub_category");
 }
 
 function richTextEscape(value) {
@@ -103,9 +115,17 @@ window.fieldnotesData = {
 
     let postsQuery = supabaseClient
       .from("posts")
-      .select("id, category, title, body, conclusion, ai_usage, attachment_type, attachment_url, attachments, author_id, date, deleted_at");
+      .select("id, category, sub_category, title, body, conclusion, ai_usage, attachment_type, attachment_url, attachments, author_id, date, deleted_at");
     if (!includeDeleted) postsQuery = postsQuery.is("deleted_at", null);
-    const { data, error } = await postsQuery.order("date", { ascending: false });
+    let { data, error } = await postsQuery.order("date", { ascending: false });
+
+    if (error && isMissingSubcategoryError(error)) {
+      postsQuery = supabaseClient
+        .from("posts")
+        .select("id, category, title, body, conclusion, ai_usage, attachment_type, attachment_url, attachments, author_id, date, deleted_at");
+      if (!includeDeleted) postsQuery = postsQuery.is("deleted_at", null);
+      ({ data, error } = await postsQuery.order("date", { ascending: false }));
+    }
 
     if (error) throw error;
 
@@ -367,10 +387,19 @@ window.fieldnotesData = {
 
     let draftsQuery = supabaseClient
       .from("team_drafts")
-      .select("id, category, title, body, conclusion, ai_usage, attachment_type, attachment_url, attachments, author_id, is_shared, updated_at, deleted_at")
+      .select("id, category, sub_category, title, body, conclusion, ai_usage, attachment_type, attachment_url, attachments, author_id, is_shared, updated_at, deleted_at")
       .or(`author_id.eq.${session.user.id},is_shared.eq.true`);
     if (!includeDeleted) draftsQuery = draftsQuery.is("deleted_at", null);
-    const { data, error } = await draftsQuery.order("updated_at", { ascending: false });
+    let { data, error } = await draftsQuery.order("updated_at", { ascending: false });
+
+    if (error && isMissingSubcategoryError(error)) {
+      draftsQuery = supabaseClient
+        .from("team_drafts")
+        .select("id, category, title, body, conclusion, ai_usage, attachment_type, attachment_url, attachments, author_id, is_shared, updated_at, deleted_at")
+        .or(`author_id.eq.${session.user.id},is_shared.eq.true`);
+      if (!includeDeleted) draftsQuery = draftsQuery.is("deleted_at", null);
+      ({ data, error } = await draftsQuery.order("updated_at", { ascending: false }));
+    }
 
     if (error) throw error;
     return (data || []).map(draft => ({
@@ -387,6 +416,7 @@ window.fieldnotesData = {
     const draftId = draft.id;
     const draftValues = {
       category: Array.isArray(draft.category) ? draft.category : [draft.category],
+      sub_category: draft.sub_category || null,
       title: draft.title,
       body: draft.body,
       conclusion: draft.conclusion,
@@ -418,6 +448,7 @@ window.fieldnotesData = {
       .from("posts")
       .insert({
         category: draft.category,
+        sub_category: draft.sub_category || null,
         title: draft.title,
         body: draft.body,
         conclusion: draft.conclusion,

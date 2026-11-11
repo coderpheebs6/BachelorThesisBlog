@@ -468,6 +468,41 @@ button, a { -webkit-tap-highlight-color: transparent; }
   padding-top: 16px;
 }
 
+.subfilter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.subfilter-label {
+  margin-right: 6px;
+  color: var(--muted);
+  font: .68rem var(--mono);
+  letter-spacing: .07em;
+}
+
+.subfilter-option {
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: .62rem var(--mono);
+  letter-spacing: .05em;
+  transition: border-color .2s ease, color .2s ease, background .2s ease;
+}
+
+.subfilter-option:hover, .subfilter-option.is-selected {
+  border-color: var(--lime);
+  color: var(--lime);
+}
+
+.subfilter-option.is-selected {
+  background: rgba(215, 255, 0, .08);
+}
+
 .composer {
   padding: 40px;
   margin-bottom: 100px;

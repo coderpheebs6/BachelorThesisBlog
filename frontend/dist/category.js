@@ -27,6 +27,10 @@ function categoryLabels(values) {
   return values.map(categoryLabel).join(" · ");
 }
 
+function subCategoryLabel(value) {
+  return (window.fieldnotesSubcategories || []).find(option => option.value === value)?.label || value;
+}
+
 function safeAttachmentUrl(value) {
   try {
     const url = new URL(value);
@@ -92,37 +96,36 @@ async function renderCategory() {
     return;
   }
 
+  const filterOptions = document.querySelectorAll(".subfilter-option");
   const count = document.getElementById("post-count");
-  if (count) {
-    count.textContent = `${String(posts.length).padStart(2, "0")} NOTES`;
-  }
-
-  if (!posts.length) {
-    container.innerHTML = `
-      <p class="empty-state">
-        No notes have been published here yet.
-      </p>`;
-    return;
-  }
-
-  container.innerHTML = posts.map(post => `
-    <a class="latest-card" href="article.html?${post.is_draft ? `draft=${encodeURIComponent(post.id)}` : `id=${encodeURIComponent(post.id)}`}">
-      <span class="note-tag">${post.is_draft ? "TEAM DRAFT / " : ""}${escapeHTML(categoryLabels(post.category))} / ${formatDate(post.date)}</span>
-      <h3>${escapeHTML(post.title)}</h3>
-      <p>${escapeHTML(richTextPlainText(post.body).slice(0, 140))}${richTextPlainText(post.body).length > 140 ? "…" : ""}</p>
-      <span class="note-footer">${authorMarkup(post)}<span class="read-more">READ NOTE ↗</span></span>
-    </a>
-  `).join("");
-
-  if (window.gsap && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    gsap.from(".latest-card", {
-      opacity: 0,
-      y: 25,
-      stagger: 0.1,
-      duration: 0.6,
-      ease: "power3.out"
+  const renderPosts = subCategory => {
+    const filteredPosts = subCategory
+      ? posts.filter(post => post.sub_category === subCategory)
+      : posts;
+    if (count) count.textContent = `${String(filteredPosts.length).padStart(2, "0")} NOTES`;
+    container.innerHTML = filteredPosts.length
+      ? filteredPosts.map(post => `
+        <a class="latest-card" href="article.html?${post.is_draft ? `draft=${encodeURIComponent(post.id)}` : `id=${encodeURIComponent(post.id)}`}">
+          <span class="note-tag">${post.is_draft ? "TEAM DRAFT / " : ""}${escapeHTML(categoryLabels(post.category))}${post.sub_category ? ` / ${escapeHTML(subCategoryLabel(post.sub_category))}` : ""} / ${formatDate(post.date)}</span>
+          <h3>${escapeHTML(post.title)}</h3>
+          <p>${escapeHTML(richTextPlainText(post.body).slice(0, 140))}${richTextPlainText(post.body).length > 140 ? "…" : ""}</p>
+          <span class="note-footer">${authorMarkup(post)}<span class="read-more">READ NOTE ↗</span></span>
+        </a>
+      `).join("")
+      : `<p class="empty-state">No notes have been published here yet.</p>`;
+    if (window.gsap && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      gsap.from(".latest-card", { opacity: 0, y: 25, stagger: 0.1, duration: 0.6, ease: "power3.out" });
+    }
+  };
+  filterOptions.forEach(button => button.addEventListener("click", () => {
+    filterOptions.forEach(option => {
+      const selected = option === button;
+      option.classList.toggle("is-selected", selected);
+      option.setAttribute("aria-pressed", String(selected));
     });
-  }
+    renderPosts(button.dataset.subcategory || "");
+  }));
+  renderPosts("");
 }
 
 async function renderArticle() {
@@ -163,7 +166,7 @@ async function renderArticle() {
 
   container.innerHTML = `
     <p class="eyebrow note-heading"><span class="note-icon" aria-hidden="true"></span>${isDraft ? "DRAFT / TEAM ONLY" : `PROCESS BLOG / ${escapeHTML(categoryLabels(post.category))}`}</p>
-    <p class="article-date">${formatDate(post.date || post.updated_at)} · ${escapeHTML(categoryLabels(post.category))}</p>
+    <p class="article-date">${formatDate(post.date || post.updated_at)} · ${escapeHTML(categoryLabels(post.category))}${post.sub_category ? ` · ${escapeHTML(subCategoryLabel(post.sub_category))}` : ""}</p>
     <div class="article-author">${authorMarkup(post)}</div>
     <h1>${escapeHTML(post.title)}</h1>
     ${isDraft ? `<div class="article-draft-banner"><span>This draft is only visible to logged-in team members.</span><button id="publish-draft-button" class="submit-button" type="button">PUBLISH DRAFT <span>↗</span></button><p id="draft-message" class="form-message" aria-live="polite"></p></div>` : ""}

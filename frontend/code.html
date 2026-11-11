@@ -11,9 +11,9 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="data.js?v=23" defer></script>
+  <script src="data.js?v=24" defer></script>
   <script src="public-nav.js?v=14" defer></script>
-  <script src="category.js?v=10" defer></script>
+  <script src="category.js?v=11" defer></script>
 </head>
 <body class="category-page" data-category="code">
   <nav class="navbar">
@@ -30,6 +30,14 @@
       <h1>Prototype the<br><span>workflow.</span></h1>
       <p class="category-intro">Our prototypes, technical experiments, debugging lessons and development progress.</p>
       <div class="category-meta"><span>THESIS AREA: DEVELOPMENT</span><span id="post-count">00 NOTES</span></div>
+      <div class="subfilter" role="group" aria-label="Filter notes by process type">
+        <span class="subfilter-label">FILTER</span>
+        <button type="button" class="subfilter-option is-selected" data-subcategory="" aria-pressed="true">ALL</button>
+        <button type="button" class="subfilter-option" data-subcategory="expert-desk" aria-pressed="false">EXPERT DESK</button>
+        <button type="button" class="subfilter-option" data-subcategory="client" aria-pressed="false">CLIENT</button>
+        <button type="button" class="subfilter-option" data-subcategory="progress" aria-pressed="false">PROGRESS</button>
+        <button type="button" class="subfilter-option" data-subcategory="testing" aria-pressed="false">TESTING</button>
+      </div>
     </header>
 
     <section class="notes-section">

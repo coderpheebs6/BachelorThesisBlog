@@ -31,6 +31,7 @@ const noteFormLabel = document.getElementById("note-form-label");
 const noteSubmitButton = document.getElementById("note-submit-button");
 const categoryPicker = document.getElementById("category");
 const categoryMessage = document.getElementById("category-message");
+const subcategoryPicker = document.getElementById("sub-category");
 const attachmentList = document.getElementById("attachment-list");
 const attachmentLinkInput = document.getElementById("attachment-link");
 const attachmentLinkNameInput = document.getElementById("attachment-link-name");
@@ -377,7 +378,7 @@ function closePreview() {
 }
 
 function openPreview(post) {
-  previewCategory.textContent = `${post.category.join(" · ").toUpperCase()} / THESIS NOTE`;
+  previewCategory.textContent = `${post.category.join(" · ").toUpperCase()}${post.sub_category ? ` / ${post.sub_category.toUpperCase()}` : ""} / THESIS NOTE`;
   previewTitle.textContent = post.title;
   previewDate.textContent = formatDate(post.date);
   previewBody.textContent = post.body;
@@ -478,6 +479,7 @@ function renderAttachmentList() {
 function getNoteFormValues() {
   return {
     category: [...categoryPicker.querySelectorAll(".category-option.is-selected")].map(button => button.dataset.category),
+    sub_category: subcategoryPicker.querySelector(".category-option.is-selected")?.dataset.subcategory || null,
     title: document.getElementById("title").value.trim(),
     body: sanitizeRichText(noteEditor.innerHTML).trim(),
     conclusion: document.getElementById("conclusion").value.trim() || null,
@@ -493,6 +495,11 @@ function fillNoteForm(note) {
   const categories = Array.isArray(note.category) ? note.category : [note.category || "ux"];
   categoryPicker.querySelectorAll(".category-option").forEach(button => {
     const selected = categories.includes(button.dataset.category);
+    button.classList.toggle("is-selected", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
+  subcategoryPicker.querySelectorAll(".category-option").forEach(button => {
+    const selected = button.dataset.subcategory === (note.sub_category || "expert-desk");
     button.classList.toggle("is-selected", selected);
     button.setAttribute("aria-pressed", String(selected));
   });
@@ -516,6 +523,11 @@ function resetCategoryPicker() {
     button.setAttribute("aria-pressed", String(selected));
   });
   categoryMessage.textContent = "";
+  subcategoryPicker.querySelectorAll(".category-option").forEach(button => {
+    const selected = button.dataset.subcategory === "expert-desk";
+    button.classList.toggle("is-selected", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
   editingAttachments = [];
   attachmentLinkNameInput.value = "";
   attachmentLinkInput.value = "";
@@ -828,6 +840,16 @@ categoryPicker.addEventListener("click", event => {
   button.classList.toggle("is-selected");
   button.setAttribute("aria-pressed", String(button.classList.contains("is-selected")));
   categoryMessage.textContent = "";
+});
+
+subcategoryPicker.addEventListener("click", event => {
+  const button = event.target.closest(".category-option");
+  if (!button) return;
+  subcategoryPicker.querySelectorAll(".category-option").forEach(option => {
+    const selected = option === button;
+    option.classList.toggle("is-selected", selected);
+    option.setAttribute("aria-pressed", String(selected));
+  });
 });
 
 function addLinkAttachment() {
