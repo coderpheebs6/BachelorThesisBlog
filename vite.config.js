@@ -9,6 +9,7 @@ module.exports = defineConfig({
     rollupOptions: {
       input: {
         index: path.resolve(__dirname, "frontend/index.html"),
+        access: path.resolve(__dirname, "frontend/access.html"),
         team: path.resolve(__dirname, "frontend/team.html"),
         ux: path.resolve(__dirname, "frontend/ux.html"),
         design: path.resolve(__dirname, "frontend/design.html"),

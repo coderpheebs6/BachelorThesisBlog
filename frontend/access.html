@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Private toegang — Projector Workflow Thesis</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="access.js?v=1" defer></script>
+</head>
+<body class="team-page">
+  <main class="team-main">
+    <section class="team-panel">
+      <p class="eyebrow">PRIVATE / THESIS ACCESS</p>
+      <h1>Enter the<br><span>access code.</span></h1>
+      <form id="access-form" class="team-form">
+        <label for="access-code">ACCESS CODE</label>
+        <input id="access-code" type="password" required autocomplete="off">
+        <button type="submit" class="submit-button">ENTER <span>↗</span></button>
+        <p id="access-message" class="form-message" aria-live="polite"></p>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

@@ -708,7 +708,12 @@ loginForm.addEventListener("submit", async event => {
   }
 
   loginForm.reset();
-  updateAuthView();
+  await updateAuthView();
+
+  const returnUrl = new URLSearchParams(window.location.search).get("return");
+  if (returnUrl && returnUrl.startsWith("/") && !returnUrl.startsWith("//")) {
+    window.location.assign(returnUrl);
+  }
 });
 
 profileForm.addEventListener("submit", async event => {

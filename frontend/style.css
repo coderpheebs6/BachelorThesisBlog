@@ -20,6 +20,10 @@ html {
   scroll-padding-top: 90px;
 }
 
+body.site-gated {
+  visibility: hidden;
+}
+
 body {
   margin: 0;
   background: var(--bg);

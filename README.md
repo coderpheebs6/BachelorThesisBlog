@@ -24,6 +24,13 @@ npm run build
 
 ## Teamomgeving
 
+### Leraren-toegang
+
+In Supabase open je **SQL Editor** en voer je de inhoud van
+`supabase/migrations/20261121101700_add_site_access_gate.sql` uit.
+Pas daarna de tijdelijke website opnieuw via GitHub Pages. De lerarencode wordt
+alleen als salted hash opgeslagen en verschijnt niet als leesbare tekst in de sitebron.
+
 De publieke website is alleen-lezen. Teamleden voegen posts toe via `team.html`.
 De teamomgeving gebruikt Supabase Auth en een centrale `posts`-tabel, zodat nieuwe
 posts voor alle bezoekers zichtbaar zijn.
