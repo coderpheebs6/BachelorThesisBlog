@@ -114,7 +114,7 @@ async function renderCategory() {
       `).join("")
       : `<p class="empty-state">No notes have been published here yet.</p>`;
     if (window.gsap && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      gsap.from(".latest-card", { opacity: 0, y: 25, stagger: 0.1, duration: 0.6, ease: "power3.out" });
+      gsap.from(".latest-card", { opacity: 0, duration: 0.45, ease: "power3.out" });
     }
   };
   filterOptions.forEach(button => button.addEventListener("click", () => {
