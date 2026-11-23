@@ -26,6 +26,18 @@ function authorMarkup(post) {
   return `<span class="author"><span class="avatar">${avatar}</span><span>${escapeHTML(name)}</span></span>`;
 }
 
+function postCoverMarkup(post) {
+  const image = normalizeAttachments(post).find(attachment => attachment.type === "image" && /^https:\/\//i.test(attachment.url || ""));
+  return image
+    ? `<span class="card-cover"><img src="${escapeHTML(image.url)}" alt="" loading="lazy"></span>`
+    : "";
+}
+
+function readingMinutes(post) {
+  const words = richTextPlainText(post.body).trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.round(words / 200));
+}
+
 const latestContainer = document.getElementById("latest-posts");
 const backToTop = document.querySelector(".back-to-top");
 
@@ -36,15 +48,16 @@ backToTop?.addEventListener("click", event => {
 
 if (latestContainer) {
   window.fieldnotesData.getPosts().then(posts => {
-    const latestPosts = posts.slice(0, 4);
+    const latestPosts = posts.slice(0, 5);
 
     if (latestPosts.length) {
       latestContainer.innerHTML = latestPosts.map(post => `
-      <a class="latest-card" href="article.html?${post.is_draft ? `draft=${encodeURIComponent(post.id)}` : `id=${encodeURIComponent(post.id)}`}">
+      <a class="latest-card" data-category="${escapeHTML(post.category[0] || "ux")}" href="article.html?${post.is_draft ? `draft=${encodeURIComponent(post.id)}` : `id=${encodeURIComponent(post.id)}`}">
+        ${postCoverMarkup(post)}
         <span class="note-tag">${post.is_draft ? "TEAM DRAFT / " : ""}${escapeHTML(post.category.map(value => value.toUpperCase()).join(" · "))} / ${formatDate(post.date)}</span>
         <h3>${escapeHTML(post.title)}</h3>
         <p>${escapeHTML(richTextPlainText(post.body).slice(0, 140))}${richTextPlainText(post.body).length > 140 ? "…" : ""}</p>
-        <span class="note-footer">${authorMarkup(post)}<span class="read-more">READ NOTE ↗</span></span>
+        <span class="note-footer">${authorMarkup(post)}<span class="read-more">${readingMinutes(post)} MIN READ <span class="read-more-arrow">↗</span></span></span>
       </a>
       `).join("");
     }

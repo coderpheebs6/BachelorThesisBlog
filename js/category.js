@@ -83,6 +83,18 @@ function authorMarkup(post) {
   return `<span class="author"><span class="avatar">${avatar}</span><span>${escapeHTML(name)}</span></span>`;
 }
 
+function postCoverMarkup(post) {
+  const image = normalizeAttachments(post).find(attachment => attachment.type === "image" && /^https:\/\//i.test(attachment.url || ""));
+  return image
+    ? `<span class="card-cover"><img src="${escapeHTML(image.url)}" alt="" loading="lazy"></span>`
+    : "";
+}
+
+function readingMinutes(post) {
+  const words = richTextPlainText(post.body).trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.round(words / 200));
+}
+
 async function renderCategory() {
   const container = document.getElementById("category-posts");
   if (!container) return;
@@ -105,11 +117,12 @@ async function renderCategory() {
     if (count) count.textContent = `${String(filteredPosts.length).padStart(2, "0")} NOTES`;
     container.innerHTML = filteredPosts.length
       ? filteredPosts.map(post => `
-        <a class="latest-card" href="article.html?${post.is_draft ? `draft=${encodeURIComponent(post.id)}` : `id=${encodeURIComponent(post.id)}`}">
+        <a class="latest-card" data-category="${escapeHTML(post.category[0] || "ux")}" href="article.html?${post.is_draft ? `draft=${encodeURIComponent(post.id)}` : `id=${encodeURIComponent(post.id)}`}">
+          ${postCoverMarkup(post)}
           <span class="note-tag">${post.is_draft ? "TEAM DRAFT / " : ""}${escapeHTML(categoryLabels(post.category))}${post.sub_category ? ` / ${escapeHTML(subCategoryLabel(post.sub_category))}` : ""} / ${formatDate(post.date)}</span>
           <h3>${escapeHTML(post.title)}</h3>
           <p>${escapeHTML(richTextPlainText(post.body).slice(0, 140))}${richTextPlainText(post.body).length > 140 ? "…" : ""}</p>
-          <span class="note-footer">${authorMarkup(post)}<span class="read-more">READ NOTE ↗</span></span>
+          <span class="note-footer">${authorMarkup(post)}<span class="read-more">${readingMinutes(post)} MIN READ <span class="read-more-arrow">↗</span></span></span>
         </a>
       `).join("")
       : `<p class="empty-state">No notes have been published here yet.</p>`;
@@ -126,6 +139,21 @@ async function renderCategory() {
     renderPosts(button.dataset.subcategory || "");
   }));
   renderPosts("");
+}
+
+function setupReadingProgress() {
+  if (document.querySelector(".reading-progress")) return;
+  const bar = document.createElement("div");
+  bar.className = "reading-progress";
+  bar.setAttribute("aria-hidden", "true");
+  document.body.append(bar);
+  const update = () => {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.transform = `scaleX(${max > 0 ? Math.min(1, window.scrollY / max) : 0})`;
+  };
+  window.addEventListener("scroll", update, { passive: true });
+  window.addEventListener("resize", update);
+  update();
 }
 
 async function renderArticle() {
@@ -165,10 +193,18 @@ async function renderArticle() {
   if (backLink) backLink.href = isDraft ? "team.html" : `${post.category[0] || "ux"}.html`;
 
   container.innerHTML = `
-    <p class="eyebrow note-heading"><span class="note-icon" aria-hidden="true"></span>${isDraft ? "DRAFT / TEAM ONLY" : `PROCESS BLOG / ${escapeHTML(categoryLabels(post.category))}`}</p>
-    <p class="article-date">${formatDate(post.date || post.updated_at)} · ${escapeHTML(categoryLabels(post.category))}${post.sub_category ? ` · ${escapeHTML(subCategoryLabel(post.sub_category))}` : ""}</p>
-    <div class="article-author">${authorMarkup(post)}</div>
-    <h1>${escapeHTML(post.title)}</h1>
+    <header class="article-header">
+      <p class="eyebrow note-heading"><span class="note-icon" aria-hidden="true"></span>${isDraft ? "DRAFT / TEAM ONLY" : `PROCESS BLOG / ${escapeHTML(categoryLabels(post.category))}`}</p>
+      <div class="article-chips">
+        ${post.category.map(value => `<span class="article-chip" data-category="${escapeHTML(value)}">${escapeHTML(categoryLabel(value))}</span>`).join("")}
+        ${post.sub_category ? `<span class="article-chip article-chip-muted">${escapeHTML(subCategoryLabel(post.sub_category))}</span>` : ""}
+      </div>
+      <h1>${escapeHTML(post.title)}</h1>
+      <div class="article-meta-bar">
+        <div class="article-author">${authorMarkup(post)}</div>
+        <p class="article-date">${formatDate(post.date || post.updated_at)} · ${readingMinutes(post)} MIN READ</p>
+      </div>
+    </header>
     ${isDraft ? `<div class="article-draft-banner"><span>This draft is only visible to logged-in team members.</span><button id="publish-draft-button" class="submit-button" type="button">PUBLISH DRAFT <span>↗</span></button><p id="draft-message" class="form-message" aria-live="polite"></p></div>` : ""}
     ${canEdit ? `<div class="article-edit-actions"><button id="edit-post-button" class="text-button" type="button">EDIT POST</button></div><form id="article-edit-form" class="article-edit-form" hidden>
       <label for="edit-post-title">TITLE</label>
@@ -190,7 +226,13 @@ async function renderArticle() {
     ${post.conclusion ? `<aside class="article-takeaway"><span class="takeaway-icon" aria-hidden="true"></span><div class="takeaway-copy"><span class="eyebrow">KEY TAKEAWAY</span><p>${escapeHTML(post.conclusion)}</p></div></aside>` : ""}
     ${post.ai_usage ? `<aside class="article-ai"><span class="ai-icon" aria-hidden="true">✦</span><div><span class="eyebrow">AI USE</span><p>${escapeHTML(post.ai_usage)}</p></div></aside>` : ""}
     ${linkAttachmentsMarkup(post)}
+    ${isDraft ? "" : `<nav class="article-end" aria-label="More notes">
+      <a class="article-end-link" href="${escapeHTML(post.category[0] || "ux")}.html"><span class="eyebrow">KEEP READING</span><strong>More ${escapeHTML(({ ux: "UX", design: "Design", code: "Development" })[post.category[0]] || categoryLabel(post.category[0] || "ux"))} notes</strong><span class="article-end-arrow">↗</span></a>
+      <a class="article-end-link" href="index.html"><span class="eyebrow">THE ARCHIVE</span><strong>All process notes</strong><span class="article-end-arrow">↗</span></a>
+    </nav>`}
   `;
+  document.body.dataset.accent = post.category[0] || "ux";
+  setupReadingProgress();
 
   if (canEdit) {
     const editButton = document.getElementById("edit-post-button");

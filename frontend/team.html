@@ -92,65 +92,127 @@
           <p id="chat-message" class="form-message" aria-live="polite"></p>
         </form>
       </section>
-      <form id="team-form" class="team-form">
-        <span class="form-section-label">THESIS PILLARS <span class="optional">(choose one or more)</span></span>
-        <div id="category" class="category-picker" role="group" aria-label="Thesis pillars">
-          <button type="button" class="category-option is-selected" data-category="ux" aria-pressed="true"><span class="category-option-icon category-icon-ux" aria-hidden="true"></span>UX</button>
-          <button type="button" class="category-option" data-category="design" aria-pressed="false"><span class="category-option-icon category-icon-design" aria-hidden="true"></span>DESIGN</button>
-          <button type="button" class="category-option" data-category="code" aria-pressed="false"><span class="category-option-icon category-icon-code" aria-hidden="true"></span>DEVELOPMENT</button>
-        </div>
-        <p id="category-message" class="form-message" aria-live="polite"></p>
-        <span class="form-section-label">PROCESS FILTER <span class="optional">(choose one)</span></span>
-        <div id="sub-category" class="category-picker" role="group" aria-label="Process filter">
-          <button type="button" class="category-option is-selected" data-subcategory="expert-desk" aria-pressed="true"><span class="category-option-icon category-icon-ux" aria-hidden="true"></span>EXPERT DESK</button>
-          <button type="button" class="category-option" data-subcategory="client" aria-pressed="false"><span class="category-option-icon category-icon-design" aria-hidden="true"></span>CLIENT</button>
-          <button type="button" class="category-option" data-subcategory="progress" aria-pressed="false"><span class="category-option-icon category-icon-code" aria-hidden="true"></span>PROGRESS</button>
-          <button type="button" class="category-option" data-subcategory="testing" aria-pressed="false"><span class="category-option-icon category-icon-ux" aria-hidden="true"></span>TESTING</button>
-        </div>
-        <div id="note-form-label" class="form-section-label">01 / WRITE THE NOTE</div>
-        <label for="title">TITLE</label>
-        <input id="title" type="text" maxlength="80" required>
-        <label for="body">YOUR NOTE</label>
-        <div class="rich-text-editor-wrap">
-          <div class="rich-text-toolbar team-note-rich-text-toolbar" aria-label="Text formatting"><button type="button" data-command="clearHighlight" aria-label="Remove highlight">×</button><button type="button" data-command="formatBlock" data-value="h1">H1</button><button type="button" data-command="formatBlock" data-value="h2">H2</button><button type="button" data-command="formatBlock" data-value="h3">H3</button><button type="button" data-command="formatBlock" data-value="h4">H4</button><button type="button" data-command="bold"><strong>B</strong></button><button type="button" data-command="italic"><em>I</em></button><button type="button" data-command="underline"><u>U</u></button><span class="toolbar-divider"></span><button type="button" class="highlight-yellow" data-command="hiliteColor" data-value="#fff176" aria-label="Highlight yellow">●</button><button type="button" class="highlight-pink" data-command="hiliteColor" data-value="#f1a7c5" aria-label="Highlight pink">●</button><button type="button" class="highlight-blue" data-command="hiliteColor" data-value="#8ed8ff" aria-label="Highlight blue">●</button><button type="button" class="highlight-green" data-command="hiliteColor" data-value="#d8f36a" aria-label="Highlight green">●</button></div>
-          <div id="body" class="rich-text-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Write your note..."></div>
-        </div>
-        <label for="conclusion">KEY TAKEAWAY <span class="optional">(optional)</span></label>
-        <textarea id="conclusion" rows="5" maxlength="500" placeholder="What should the reader remember?"></textarea>
-        <label for="ai-usage">AI USE <span class="optional">(optional)</span></label>
-        <textarea id="ai-usage" rows="4" maxlength="500" placeholder="How did you use AI in this part of the process?"></textarea>
-        <fieldset class="media-fieldset">
-          <legend>ADD MEDIA <span class="optional">(optional)</span></legend>
-          <div id="attachment-list" class="attachment-list"></div>
-          <div class="attachment-input-group">
-            <div class="attachment-add-row">
-              <div class="attachment-link-name-field">
-                <label for="attachment-link-name">LINK NAME</label>
-                <input id="attachment-link-name" type="text" maxlength="120" placeholder="e.g. Figma board">
-              </div>
-              <div class="attachment-link-url-field">
-                <label for="attachment-link">LINK</label>
-                <input id="attachment-link" type="url" maxlength="1000" placeholder="https://...">
-              </div>
+      <form id="team-form" class="team-form post-composer">
+        <header class="post-composer-header">
+          <span class="post-composer-icon" aria-hidden="true">✎</span>
+          <div>
+            <div id="note-form-label" class="post-composer-label">01 / WRITE THE NOTE</div>
+            <p class="muted">Classify your update, write it out and add what the reader needs.</p>
+          </div>
+        </header>
+
+        <section class="composer-card" aria-labelledby="composer-classify-title">
+          <div class="composer-card-heading">
+            <span class="composer-step" aria-hidden="true">A</span>
+            <div>
+              <p id="composer-classify-title" class="eyebrow">CLASSIFY</p>
+              <h2>Where does it <span>belong?</span></h2>
             </div>
           </div>
-          <div class="attachment-input-group">
-            <label for="attachment-images">PHOTOS <span class="optional">(multiple)</span></label>
-            <input id="attachment-images" type="file" accept="image/*" multiple>
+          <div class="composer-field-group">
+            <span class="form-section-label">THESIS PILLARS <span class="optional">(choose one or more)</span></span>
+            <div id="category" class="category-picker" role="group" aria-label="Thesis pillars">
+              <button type="button" class="category-option is-selected" data-category="ux" aria-pressed="true"><span class="category-option-icon category-icon-ux" aria-hidden="true"></span>UX</button>
+              <button type="button" class="category-option" data-category="design" aria-pressed="false"><span class="category-option-icon category-icon-design" aria-hidden="true"></span>DESIGN</button>
+              <button type="button" class="category-option" data-category="code" aria-pressed="false"><span class="category-option-icon category-icon-code" aria-hidden="true"></span>DEVELOPMENT</button>
+            </div>
+            <p id="category-message" class="form-message" aria-live="polite"></p>
           </div>
-          <div class="attachment-input-group">
-            <label for="attachment-videos">VIDEOS <span class="optional">(multiple)</span></label>
-            <input id="attachment-videos" type="file" accept="video/*" multiple>
+          <div class="composer-field-group">
+            <span class="form-section-label">PROCESS FILTER <span class="optional">(choose one)</span></span>
+            <div id="sub-category" class="category-picker" role="group" aria-label="Process filter">
+              <button type="button" class="category-option is-selected" data-subcategory="expert-desk" aria-pressed="true"><span class="category-option-icon category-icon-ux" aria-hidden="true"></span>EXPERT DESK</button>
+              <button type="button" class="category-option" data-subcategory="client" aria-pressed="false"><span class="category-option-icon category-icon-design" aria-hidden="true"></span>CLIENT</button>
+              <button type="button" class="category-option" data-subcategory="progress" aria-pressed="false"><span class="category-option-icon category-icon-code" aria-hidden="true"></span>PROGRESS</button>
+              <button type="button" class="category-option" data-subcategory="testing" aria-pressed="false"><span class="category-option-icon category-icon-ux" aria-hidden="true"></span>TESTING</button>
+            </div>
           </div>
-          <p class="form-hint">Add as many links, photos and videos as you need.</p>
-        </fieldset>
-        <div class="note-form-actions">
-          <button id="save-draft-button" type="button" class="submit-button secondary-button">SAVE DRAFT <span>↘</span></button>
-          <button id="publish-draft-button" type="button" class="submit-button">PUBLISH AS DRAFT <span>↗</span></button>
-          <button id="note-submit-button" type="submit" class="submit-button">PUBLISH NOTE <span>↗</span></button>
+        </section>
+
+        <section class="composer-card" aria-labelledby="composer-write-title">
+          <div class="composer-card-heading">
+            <span class="composer-step" aria-hidden="true">B</span>
+            <div>
+              <p id="composer-write-title" class="eyebrow">WRITE</p>
+              <h2>Tell the <span>story.</span></h2>
+            </div>
+          </div>
+          <label for="title">TITLE</label>
+          <input id="title" type="text" maxlength="80" required>
+          <label for="body">YOUR NOTE</label>
+          <div class="rich-text-editor-wrap">
+            <div class="rich-text-toolbar team-note-rich-text-toolbar" aria-label="Text formatting"><button type="button" data-command="clearHighlight" aria-label="Remove highlight">×</button><button type="button" data-command="formatBlock" data-value="h1">H1</button><button type="button" data-command="formatBlock" data-value="h2">H2</button><button type="button" data-command="formatBlock" data-value="h3">H3</button><button type="button" data-command="formatBlock" data-value="h4">H4</button><button type="button" data-command="bold"><strong>B</strong></button><button type="button" data-command="italic"><em>I</em></button><button type="button" data-command="underline"><u>U</u></button><span class="toolbar-divider"></span><button type="button" class="highlight-yellow" data-command="hiliteColor" data-value="#fff176" aria-label="Highlight yellow">●</button><button type="button" class="highlight-pink" data-command="hiliteColor" data-value="#f1a7c5" aria-label="Highlight pink">●</button><button type="button" class="highlight-blue" data-command="hiliteColor" data-value="#8ed8ff" aria-label="Highlight blue">●</button><button type="button" class="highlight-green" data-command="hiliteColor" data-value="#d8f36a" aria-label="Highlight green">●</button></div>
+            <div id="body" class="rich-text-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Write your note..."></div>
+          </div>
+        </section>
+
+        <section class="composer-card" aria-labelledby="composer-reflect-title">
+          <div class="composer-card-heading">
+            <span class="composer-step" aria-hidden="true">C</span>
+            <div>
+              <p id="composer-reflect-title" class="eyebrow">REFLECT <span class="optional">(optional)</span></p>
+              <h2>What did you <span>learn?</span></h2>
+            </div>
+          </div>
+          <div class="composer-two-col">
+            <div class="composer-field composer-field-takeaway">
+              <label for="conclusion"><span class="takeaway-icon" aria-hidden="true"></span>KEY TAKEAWAY</label>
+              <textarea id="conclusion" rows="5" maxlength="500" placeholder="What should the reader remember?"></textarea>
+            </div>
+            <div class="composer-field composer-field-ai">
+              <label for="ai-usage"><span class="ai-icon" aria-hidden="true">✦</span>AI USE</label>
+              <textarea id="ai-usage" rows="5" maxlength="500" placeholder="How did you use AI in this part of the process?"></textarea>
+            </div>
+          </div>
+        </section>
+
+        <section class="composer-card">
+          <fieldset class="media-fieldset">
+            <legend class="composer-card-heading">
+              <span class="composer-step" aria-hidden="true">D</span>
+              <span>
+                <span class="eyebrow">ADD MEDIA <span class="optional">(optional)</span></span>
+                <span class="composer-card-title">Show the <span>evidence.</span></span>
+              </span>
+            </legend>
+            <div id="attachment-list" class="attachment-list"></div>
+            <div class="attachment-input-group">
+              <div class="attachment-add-row">
+                <div class="attachment-link-name-field">
+                  <label for="attachment-link-name">LINK NAME</label>
+                  <input id="attachment-link-name" type="text" maxlength="120" placeholder="e.g. Figma board">
+                </div>
+                <div class="attachment-link-url-field">
+                  <label for="attachment-link">LINK</label>
+                  <input id="attachment-link" type="url" maxlength="1000" placeholder="https://...">
+                </div>
+              </div>
+            </div>
+            <div class="composer-two-col">
+              <div class="attachment-input-group">
+                <label for="attachment-images">PHOTOS <span class="optional">(multiple)</span></label>
+                <input id="attachment-images" type="file" accept="image/*" multiple>
+              </div>
+              <div class="attachment-input-group">
+                <label for="attachment-videos">VIDEOS <span class="optional">(multiple)</span></label>
+                <input id="attachment-videos" type="file" accept="video/*" multiple>
+              </div>
+            </div>
+            <p class="form-hint">Add as many links, photos and videos as you need.</p>
+          </fieldset>
+        </section>
+
+        <div class="composer-footer">
+          <div class="note-form-actions">
+            <button id="save-draft-button" type="button" class="submit-button secondary-button">SAVE DRAFT <span>↘</span></button>
+            <button id="publish-draft-button" type="button" class="submit-button secondary-button">PUBLISH AS DRAFT <span>↗</span></button>
+            <button id="note-submit-button" type="submit" class="submit-button">PUBLISH NOTE <span>↗</span></button>
+          </div>
+          <div class="composer-footer-meta">
+            <button id="cancel-edit-button" type="button" class="text-button cancel-edit-button" hidden>CANCEL EDIT</button>
+            <p id="team-message" class="form-message" aria-live="polite"></p>
+          </div>
         </div>
-        <button id="cancel-edit-button" type="button" class="text-button cancel-edit-button" hidden>CANCEL EDIT</button>
-        <p id="team-message" class="form-message" aria-live="polite"></p>
       </form>
       <div class="team-content-section">
         <div class="team-content-heading">
