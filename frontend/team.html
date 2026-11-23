@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="data.js?v=32" defer></script>
-  <script src="team.js?v=52" defer></script>
+  <script src="team.js?v=53" defer></script>
 </head>
 <body class="team-page">
   <nav class="navbar">
@@ -47,6 +47,8 @@
           <button id="logout-button" class="profile-menu-logout text-button" type="button">LOG OUT</button>
         </div>
       </div>
+      <div class="workspace-overview">
+      <div class="workspace-profile">
       <form id="profile-form" class="profile-form">
         <div>
           <p class="eyebrow">YOUR TEAM PROFILE</p>
@@ -71,6 +73,20 @@
         </div>
         <button id="edit-profile-button" class="edit-profile-button" type="button" aria-label="Edit profile">✎</button>
       </section>
+      </div>
+      <div class="new-post-card">
+        <span class="new-post-badge" aria-hidden="true">+</span>
+        <p class="eyebrow">NEW PROCESS UPDATE</p>
+        <h2>Got something to <span>share?</span></h2>
+        <p class="muted">Research, feedback, an experiment or a prototype: write it down while it's fresh.</p>
+        <button id="new-post-button" class="pill-cta" type="button" aria-expanded="false" aria-controls="team-form"><span class="pill-cta-icon" aria-hidden="true">+</span>NEW POST</button>
+      </div>
+      <nav class="workspace-stats" aria-label="Your posts">
+        <a class="stat-tile" href="#team-posts-section"><strong id="stat-published">00</strong><span>PUBLISHED</span></a>
+        <a class="stat-tile stat-tile-drafts" href="#team-drafts-section"><strong id="stat-drafts">00</strong><span>DRAFTS</span></a>
+        <a class="stat-tile stat-tile-deleted" href="#team-deleted-section"><strong id="stat-deleted">00</strong><span>DELETED</span></a>
+      </nav>
+      </div>
       <section id="team-chat-section" class="team-chat-section" aria-labelledby="team-chat-title" hidden>
         <div class="team-section-heading">
           <div>
@@ -92,13 +108,14 @@
           <p id="chat-message" class="form-message" aria-live="polite"></p>
         </form>
       </section>
-      <form id="team-form" class="team-form post-composer">
+      <form id="team-form" class="team-form post-composer" hidden>
         <header class="post-composer-header">
           <span class="post-composer-icon" aria-hidden="true">✎</span>
           <div>
             <div id="note-form-label" class="post-composer-label">01 / WRITE THE NOTE</div>
             <p class="muted">Classify your update, write it out and add what the reader needs.</p>
           </div>
+          <button id="close-composer-button" class="composer-close" type="button" aria-label="Close the post editor">CLOSE <span aria-hidden="true">×</span></button>
         </header>
 
         <section class="composer-card" aria-labelledby="composer-classify-title">
@@ -214,7 +231,7 @@
           </div>
         </div>
       </form>
-      <div class="team-content-section">
+      <div id="team-posts-section" class="team-content-section">
         <div class="team-content-heading">
           <div>
             <p class="eyebrow">YOUR PUBLISHED PROCESS POSTS</p>
@@ -222,7 +239,7 @@
         </div>
         <div id="team-posts" class="team-posts"></div>
       </div>
-      <div class="team-content-section team-drafts-section">
+      <div id="team-drafts-section" class="team-content-section team-drafts-section">
         <div class="team-content-heading">
           <div>
             <p class="eyebrow">YOUR SAVED DRAFTS</p>
@@ -230,7 +247,7 @@
         </div>
         <div id="team-drafts" class="team-posts"></div>
       </div>
-      <div class="team-content-section team-deleted-section">
+      <div id="team-deleted-section" class="team-content-section team-deleted-section">
         <div class="team-content-heading">
           <div><p class="eyebrow">DELETED PROCESS POSTS</p></div>
         </div>

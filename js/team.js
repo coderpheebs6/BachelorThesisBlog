@@ -49,6 +49,8 @@ const teamChatSection = document.getElementById("team-chat-section");
 const closeChatButton = document.getElementById("close-chat-button");
 const chatOverlay = document.getElementById("chat-overlay");
 const chatCommandMenu = document.getElementById("chat-command-menu");
+const newPostButton = document.getElementById("new-post-button");
+const closeComposerButton = document.getElementById("close-composer-button");
 let pendingDeleteId = null;
 let pendingDeleteAction = null;
 let editingPostId = null;
@@ -940,7 +942,8 @@ teamDrafts.addEventListener("click", async event => {
     if (!draft) return;
     editingDraftId = draft.id;
     fillNoteForm(draft);
-    teamForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    openComposer();
+      teamForm.scrollIntoView({ behavior: "smooth", block: "start" });
     document.getElementById("title").focus();
     showMessage(teamMessage, "Draft loaded.");
     return;
@@ -987,6 +990,7 @@ teamDeletedPosts.addEventListener("click", async event => {
       noteFormLabel.textContent = "01 / EDIT THE NOTE";
       noteSubmitButton.innerHTML = "SAVE CHANGES <span>↗</span>";
       cancelEditButton.hidden = false;
+      openComposer();
       teamForm.scrollIntoView({ behavior: "smooth", block: "start" });
       document.getElementById("title").focus();
     } else if (event.target.closest(".restore-deleted-post")) {
@@ -1032,6 +1036,7 @@ teamPosts.addEventListener("click", async event => {
       noteFormLabel.textContent = "01 / EDIT THE NOTE";
       noteSubmitButton.innerHTML = "SAVE CHANGES <span>↗</span>";
       cancelEditButton.hidden = false;
+      openComposer();
       teamForm.scrollIntoView({ behavior: "smooth", block: "start" });
       document.getElementById("title").focus();
     } catch (error) {
@@ -1118,6 +1123,35 @@ document.getElementById("logout-button").addEventListener("click", async () => {
   await window.fieldnotesData.signOut();
   updateAuthView();
 });
+
+function openComposer() {
+  teamForm.hidden = false;
+  newPostButton?.setAttribute("aria-expanded", "true");
+}
+
+function closeComposer() {
+  teamForm.hidden = true;
+  newPostButton?.setAttribute("aria-expanded", "false");
+  newPostButton?.focus();
+}
+
+newPostButton?.addEventListener("click", () => {
+  openComposer();
+  teamForm.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.getElementById("title").focus({ preventScroll: true });
+});
+
+closeComposerButton?.addEventListener("click", closeComposer);
+
+const statCounters = [
+  [teamPosts, document.getElementById("stat-published")],
+  [teamDrafts, document.getElementById("stat-drafts")],
+  [teamDeletedPosts, document.getElementById("stat-deleted")]
+];
+const updateStats = () => statCounters.forEach(([list, counter]) => {
+  if (counter) counter.textContent = String(list.querySelectorAll(".team-post").length).padStart(2, "0");
+});
+statCounters.forEach(([list]) => new MutationObserver(updateStats).observe(list, { childList: true }));
 
 window.fieldnotesData.onAuthStateChange(() => updateAuthView());
 updateAuthView();
