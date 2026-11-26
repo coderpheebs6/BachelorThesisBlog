@@ -1855,3 +1855,165 @@ a.pill-cta:hover .pill-cta-icon { transform: translateX(3px); }
   .workspace-profile .profile-card h2 { line-height: 1.15; }
   .workspace-profile .profile-card .muted { line-height: 1.45; font-size: .88rem; }
 }
+
+/* ===== Notion-style blocks: code and tables (js/rich-blocks.js) ===== */
+/* Inline code */
+.rich-text-editor code, .article-body code {
+  padding: .12em .4em;
+  border-radius: 4px;
+  background: rgba(241, 167, 197, .1);
+  color: var(--pink);
+  font: .88em var(--mono);
+  white-space: break-spaces;
+}
+
+/* Code block: same look in the editor and on the post */
+.rich-text-editor pre, .article-body pre {
+  margin: 1em 0;
+  padding: 18px 20px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #11110f;
+  color: #e9e4d6;
+  font: .86rem/1.7 var(--mono);
+  tab-size: 2;
+  white-space: pre;
+  overflow-wrap: normal;
+}
+.rich-text-editor pre code, .article-body pre code {
+  padding: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  white-space: inherit;
+}
+/* In the editor the language shows as a small label in the corner */
+.rich-text-editor pre { position: relative; padding-top: 30px; }
+.rich-text-editor pre::before {
+  content: attr(data-lang);
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  color: var(--muted);
+  font: .58rem var(--mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.article-body .code-block { margin: 1.6em 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #11110f; }
+.article-body .code-block pre { margin: 0; border: 0; border-radius: 0; }
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px 8px 18px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  font: .62rem/1 var(--mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.code-copy-button {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: .58rem/1 var(--mono);
+  letter-spacing: .08em;
+}
+.code-copy-button:hover { border-color: var(--accent, var(--lime)); color: var(--accent, var(--lime)); }
+
+/* Syntax colours (highlight.js classes) in the blog palette */
+.article-body .hljs-comment, .article-body .hljs-quote { color: #7d7b70; font-style: italic; }
+.article-body .hljs-keyword, .article-body .hljs-selector-tag, .article-body .hljs-built_in { color: var(--pink); }
+.article-body .hljs-string, .article-body .hljs-regexp, .article-body .hljs-addition { color: var(--lime); }
+.article-body .hljs-number, .article-body .hljs-literal, .article-body .hljs-symbol { color: #f5c77e; }
+.article-body .hljs-title, .article-body .hljs-title.function_, .article-body .hljs-section { color: var(--blue); }
+.article-body .hljs-attr, .article-body .hljs-attribute, .article-body .hljs-property, .article-body .hljs-variable { color: #c7b5f5; }
+.article-body .hljs-tag, .article-body .hljs-name { color: #f19a8e; }
+.article-body .hljs-meta, .article-body .hljs-deletion { color: #aaa99e; }
+
+/* Tables */
+.article-body .table-scroll { margin: 1.4em 0; overflow-x: auto; }
+.rich-text-editor table, .article-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .95rem;
+  line-height: 1.5;
+  white-space: normal;
+}
+.rich-text-editor table { margin: 1em 0; }
+.rich-text-editor th, .rich-text-editor td, .article-body th, .article-body td {
+  min-width: 90px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+.rich-text-editor th, .article-body th {
+  background: var(--surface);
+  color: var(--ink);
+  font: 500 .68rem var(--mono);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.article-body tbody tr:nth-child(even) td { background: rgba(255, 255, 255, .02); }
+.rich-text-editor td:focus-within, .rich-text-editor th:focus-within { outline: 1px solid var(--lime); outline-offset: -1px; }
+
+/* Toolbar: extra tools that only show inside a code block or table */
+.rich-context { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; padding-left: 6px; border-left: 1px solid var(--line); }
+.rich-context[hidden] { display: none; }
+.rich-context-label { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font: .62rem var(--mono); letter-spacing: .05em; text-transform: uppercase; }
+.rich-language-select { height: 30px; padding: 0 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: .7rem var(--mono); }
+.rich-context-table button:last-child { color: var(--pink); }
+/* .article-body keeps line breaks (pre-wrap); the wrappers around blocks must not */
+.article-body .code-block, .article-body .table-scroll { white-space: normal; }
+
+/* ===== Photos between the text (js/rich-blocks.js) ===== */
+.rich-text-editor figure.rich-image, .article-body figure.rich-image {
+  margin: 1.4em auto;
+  white-space: normal;
+}
+.rich-image[data-size="full"] { width: 100%; }
+.rich-image[data-size="medium"] { width: min(70%, 100%); }
+.rich-image[data-size="small"] { width: min(42%, 100%); }
+.rich-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.rich-image figcaption {
+  margin-top: 8px;
+  color: var(--muted);
+  font: .72rem/1.5 var(--mono);
+  letter-spacing: .03em;
+  text-align: center;
+}
+.article-body .rich-image figcaption:empty { display: none; }
+/* In the editor an empty caption shows a hint; a selected photo gets a lime outline */
+.rich-text-editor .rich-image figcaption { min-height: 1.5em; outline: 0; }
+.rich-text-editor .rich-image figcaption:empty::before { content: attr(data-placeholder); color: var(--line); }
+.rich-text-editor .rich-image img { cursor: pointer; }
+.rich-text-editor .rich-image:focus-within img { outline: 2px solid var(--lime); outline-offset: 2px; }
+.rich-image-uploading {
+  margin: 1em 0;
+  padding: 28px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  font: .7rem var(--mono);
+  letter-spacing: .06em;
+  text-align: center;
+  text-transform: uppercase;
+}
+.rich-context-image button.is-active { border-color: var(--lime); color: var(--lime); }
+.rich-context-image button:last-child { color: var(--pink); }
+@media (max-width: 560px) {
+  .rich-image[data-size="medium"], .rich-image[data-size="small"] { width: 100%; }
+}

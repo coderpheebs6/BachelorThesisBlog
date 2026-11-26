@@ -37,16 +37,59 @@ function richTextEscape(value) {
   })[char]);
 }
 
-const richTextTags = new Set(["H1", "H2", "H3", "H4", "P", "BR", "STRONG", "B", "EM", "I", "U", "MARK", "SPAN", "UL", "OL", "LI"]);
+const richTextTags = new Set(["H1", "H2", "H3", "H4", "P", "BR", "STRONG", "B", "EM", "I", "U", "MARK", "SPAN", "UL", "OL", "LI", "CODE", "TABLE", "THEAD", "TBODY", "TR", "TH", "TD"]);
 const richTextColorPattern = /^(?:#[0-9a-f]{3,8}|rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}(?:\s*,\s*(?:0|1|0?\.\d+))?\s*\))$/i;
+// Languages a code block can be set to (value = highlight.js name).
+const richTextCodeLanguages = [
+  ["plaintext", "Plain text"], ["javascript", "JavaScript"], ["typescript", "TypeScript"],
+  ["xml", "HTML"], ["css", "CSS"], ["json", "JSON"], ["bash", "Terminal"], ["python", "Python"], ["sql", "SQL"]
+];
+const richTextCodeLanguageSet = new Set(richTextCodeLanguages.map(([value]) => value));
+// Text of a code block with its line breaks; the editor may add <br> or <div> lines.
+function richTextCodeText(node) {
+  if (node.nodeType === Node.TEXT_NODE) return node.textContent;
+  if (node.nodeType !== Node.ELEMENT_NODE) return "";
+  if (node.tagName === "BR") return "\n";
+  const inner = [...node.childNodes].map(richTextCodeText).join("");
+  return ["DIV", "P"].includes(node.tagName) ? `\n${inner}` : inner;
+}
+const richTextTableParts = new Set(["TABLE", "THEAD", "TBODY", "TR"]);
+// Photos in a post's text must come from the post-media bucket in our Supabase storage.
+const richTextImagePrefix = `${SUPABASE_URL}/storage/v1/object/public/post-media/`;
 function sanitizeRichText(value) {
   const source = String(value || "");
   if (!source.includes("<")) return richTextEscape(source).replace(/\r?\n/g, "<br>");
   const template = document.createElement("template");
   template.innerHTML = source;
   const clean = node => {
-    if (node.nodeType === Node.TEXT_NODE) return richTextEscape(node.textContent);
+    if (node.nodeType === Node.TEXT_NODE) {
+      // Whitespace between table rows/cells is layout noise, not content.
+      if (richTextTableParts.has(node.parentNode?.tagName) && !node.textContent.trim()) return "";
+      return richTextEscape(node.textContent);
+    }
     if (node.nodeType !== Node.ELEMENT_NODE) return "";
+    // Code block: only its plain text and a known language are kept.
+    if (node.tagName === "PRE") {
+      const language = richTextCodeLanguageSet.has(node.dataset.lang) ? node.dataset.lang : "plaintext";
+      const code = richTextCodeText(node).replace(/^\n/, "").replace(/\n$/, "");
+      return `<pre data-lang="${language}"><code>${richTextEscape(code)}</code></pre>`;
+    }
+    // Photo in the text: only images uploaded to our own storage, with a caption and a size.
+    if (node.tagName === "FIGURE") {
+      const image = node.querySelector("img");
+      const src = image?.getAttribute("src") || "";
+      if (!src.startsWith(richTextImagePrefix)) return "";
+      const size = ["full", "medium", "small"].includes(node.dataset.size) ? node.dataset.size : "full";
+      const caption = (node.querySelector("figcaption")?.textContent || "").trim();
+      return `<figure class="rich-image" data-size="${size}"><img src="${richTextEscape(src)}" alt="${richTextEscape(caption || image.getAttribute("alt") || "")}"><figcaption>${richTextEscape(caption)}</figcaption></figure>`;
+    }
+    if (node.tagName === "IMG") {
+      // A loose image (e.g. pasted HTML) is kept only when it comes from our storage.
+      const src = node.getAttribute("src") || "";
+      return src.startsWith(richTextImagePrefix)
+        ? `<figure class="rich-image" data-size="full"><img src="${richTextEscape(src)}" alt=""><figcaption></figcaption></figure>`
+        : "";
+    }
     const color = node.style.backgroundColor;
     const safeColor = richTextColorPattern.test(color);
     if (!richTextTags.has(node.tagName)) {
@@ -60,6 +103,13 @@ function sanitizeRichText(value) {
     return `<${node.tagName.toLowerCase()}${style}>${[...node.childNodes].map(clean).join("")}</${node.tagName.toLowerCase()}>`;
   };
   return [...template.content.childNodes].map(clean).join("");
+}
+// The first photo placed in a post's text (used as card cover when there is no attachment).
+function richTextFirstImage(value) {
+  const template = document.createElement("template");
+  template.innerHTML = String(value || "");
+  const src = template.content.querySelector("img")?.getAttribute("src") || "";
+  return src.startsWith(richTextImagePrefix) ? src : "";
 }
 function richTextPlainText(value) {
   const template = document.createElement("template");
@@ -103,9 +153,13 @@ function setupRichTextToolbar(toolbar, editor) {
     }
     updateStickyState();
   });
+  // Code blocks, inline code and tables (js/rich-blocks.js).
+  window.setupRichBlocks?.(toolbar, editor);
 }
+window.richTextCodeLanguages = richTextCodeLanguages;
 window.sanitizeRichText = sanitizeRichText;
 window.richTextPlainText = richTextPlainText;
+window.richTextFirstImage = richTextFirstImage;
 window.setupRichTextToolbar = setupRichTextToolbar;
 
 window.fieldnotesData = {

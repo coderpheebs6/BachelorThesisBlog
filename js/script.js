@@ -28,8 +28,9 @@ function authorMarkup(post) {
 
 function postCoverMarkup(post) {
   const image = normalizeAttachments(post).find(attachment => attachment.type === "image" && /^https:\/\//i.test(attachment.url || ""));
-  return image
-    ? `<span class="card-cover"><img src="${escapeHTML(image.url)}" alt="" loading="lazy"></span>`
+  const url = image?.url || richTextFirstImage(post.body);
+  return url
+    ? `<span class="card-cover"><img src="${escapeHTML(url)}" alt="" loading="lazy"></span>`
     : "";
 }
 
